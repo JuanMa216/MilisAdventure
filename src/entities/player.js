@@ -286,28 +286,52 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
-  // --- Ceiling / Internal Seam Glitch Prevention ---
-  // When jumping under adjacent blocks (seam between Block A and Block B), SAT can choose
-  // horizontal displacement due to tiny X overlap, failing to cancel upward velocity and allowing
-  // the player to climb/tunnel through the ceiling on repeated jumps.
+  // --- Ceiling & Floor Internal Seam Glitch Prevention ---
+  // When interacting with adjacent blocks (seam between Block A and Block B), SAT algorithm
+  // can pick the horizontal axis due to tiny X overlap, resulting in:
+  // 1. CEILING: Climbing/tunneling through the ceiling when jumping repeatedly under a seam.
+  // 2. FLOOR: Lateral kick/displacement when jumping or landing on the seam of two floor blocks.
   player.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
 
-    // Only intervene when player is ascending (moving upward)
+    // Case 1: CEILING SEAM - Ascending into a block above the player
     if (player.vel && player.vel.y < 0) {
       const tileBottom = col.target.pos.y + (col.target.height ?? 24);
       const playerTop = player.pos.y - 10.3; // Top of helmet
 
       // Check if helmet penetrates a ceiling block located directly above the torso
       if (col.target.pos.y < player.pos.y && playerTop < tileBottom && tileBottom <= player.pos.y + 8) {
-        // 1. Immediately halt upward momentum
+        // Immediately halt upward momentum
         player.vel.y = 0;
 
-        // 2. Correct seam calculation: if displacement wasn't pushing down, force downward separation
+        // Correct seam calculation: force vertical separation downward
         const penetrationY = tileBottom - playerTop;
         if (penetrationY > 0 && penetrationY < 24) {
           col.displacement.x = 0;
           col.displacement.y = penetrationY;
+        }
+      }
+    }
+
+    // Case 2: FLOOR SEAM - Standing, landing, or jumping on a floor block beneath the player
+    if (col.target.pos.y >= player.pos.y) {
+      const tileTop = col.target.pos.y;
+      const playerBottom = player.pos.y + 13.71; // Bottom of boots
+      const penetrationY = playerBottom - tileTop;
+
+      // Check if feet are resting on or slightly penetrating the top surface of the floor tile
+      if (penetrationY >= -1 && penetrationY <= 12) {
+        // Prevent SAT from displacing player horizontally on internal vertical edges
+        if (col.displacement.x !== 0) {
+          col.displacement.x = 0;
+          if (penetrationY > 0) {
+            col.displacement.y = -penetrationY;
+          } else {
+            col.displacement.y = 0;
+          }
+          if (player.vel && player.vel.y > 0) {
+            player.vel.y = 0;
+          }
         }
       }
     }

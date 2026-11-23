@@ -275,11 +275,21 @@ export function createOrc(k, x, y, patrolRange = 70) {
     }
   });
 
-  // Turn around on solid obstacles (lateral wall impact only)
+  // Floor seam protection: prevent SAT from displacing enemy horizontally on flat floor joints
+  orc.onBeforePhysicsResolve((col) => {
+    if (!col.target.is("solid")) return;
+    if (col.target.pos.y >= orc.pos.y && col.displacement.x !== 0) {
+      col.displacement.x = 0;
+    }
+  });
+
+  // Turn around on solid obstacles (lateral wall impact only on obstacles at waist/head height)
   orc.onCollide("solid", (obj, col) => {
-    if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
-      dir = -dir;
-      orc.flipX = dir < 0;
+    if (obj.pos.y < orc.pos.y + 4) {
+      if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
+        dir = -dir;
+        orc.flipX = dir < 0;
+      }
     }
   });
 

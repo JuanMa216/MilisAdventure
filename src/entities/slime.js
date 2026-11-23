@@ -269,11 +269,21 @@ export function createSlime(k, x, y, patrolRange = 80) {
     }
   });
 
-  // Solid obstacle collision: reverse direction on lateral wall impact
+  // Floor seam protection: prevent SAT from displacing enemy horizontally on flat floor joints
+  slime.onBeforePhysicsResolve((col) => {
+    if (!col.target.is("solid")) return;
+    if (col.target.pos.y >= slime.pos.y && col.displacement.x !== 0) {
+      col.displacement.x = 0;
+    }
+  });
+
+  // Solid obstacle collision: reverse direction on lateral wall impact (only on walls at waist/head height)
   slime.onCollide("solid", (obj, col) => {
-    if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
-      dir = -dir;
-      slime.flipX = dir < 0;
+    if (obj.pos.y < slime.pos.y + 4) {
+      if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
+        dir = -dir;
+        slime.flipX = dir < 0;
+      }
     }
   });
 
