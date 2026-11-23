@@ -68,13 +68,6 @@ npm install
 # 3. Iniciar el juego en desarrollo
 npm run dev
    ```
-   Abre tu navegador en `http://localhost:3000/`.
-
-4. Compilar para producción:
-   ```bash
-   npm run build
-   ```
-
 ---
 
 ##  Tecnologías Utilizadas
