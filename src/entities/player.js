@@ -214,8 +214,9 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     if (player.isDead) return;
 
     // Safety 1: Prevent physics tunneling during high falls or delta time lag spikes
-    if (player.vel && player.vel.y > 420) {
-      player.vel.y = 420;
+    if (player.vel) {
+      if (player.vel.y > 420) player.vel.y = 420;
+      if (player.vel.y < -590) player.vel.y = -590;
     }
 
     // Safety 2: Bottomless pit death threshold
@@ -287,84 +288,75 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
   });
 
   // --- Ceiling & Floor Internal Seam Glitch Prevention ---
-  // Collision seam and platform physics handling:
+  // Collision seam, platform, and trampoline physics handling:
   // 1. ONE-WAY PLATFORMS: Mili can jump up freely through thin floating platforms from below,
   //    and lands firmly on top when falling onto them.
-  // 2. CEILING SEAMS: Halts upward momentum and separates downward when hitting ceiling blocks.
-  // 3. FLOOR SEAMS: Prevents SAT lateral kicks or downward penetration on floor seams,
-  //    maintaining proper upward displacement so Kaboom sets curPlatform and grounds the player.
+  // 2. CEILING COLLISIONS: Halts upward momentum immediately and forces downward separation
+  //    so high-speed jumps (trampolines) can never phase up through solid ceiling blocks.
+  // 3. FLOOR & PLATFORM LANDINGS: Prevents SAT from pushing downward or sideways on high falls,
+  //    ensuring boots land solidly on top and Kaboom grounds the player.
   player.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
 
     const isPlatform = col.target.is("platform");
     const tileTop = col.target.pos.y;
+    const tileHeight = col.target.height ?? 24;
+    const tileBottom = tileTop + tileHeight;
     const playerBottom = player.pos.y + 13.71; // Bottom of boots
     const playerTop = player.pos.y - 10.3; // Top of helmet
 
-    // --- CASE 0: ONE-WAY FLOATING PLATFORMS ("platform") ---
-    if (isPlatform) {
-      // If player is ascending (jumping up from below), pass freely through!
-      if (player.vel && player.vel.y < 0) {
-        col.preventResolution();
-        return;
-      }
-
-      // If player's feet are still below the top surface (+8px leeway),
-      // the player is still jumping/passing through from below: pass through!
-      if (playerBottom > tileTop + 8) {
-        col.preventResolution();
-        return;
-      }
-
-      // If descending or resting on top of the platform:
-      // The platform must solidly catch the player and support them!
-      const penetrationY = playerBottom - tileTop;
-      col.displacement.x = 0; // Prevent lateral seam displacement
-      if (penetrationY > 0) {
-        col.displacement.y = -penetrationY;
-      } else if (col.displacement.y >= 0) {
-        col.displacement.y = -0.1;
-      }
-      return;
-    }
-
-    // --- CASE 1: CEILING SEAM - Ascending into a solid block above the player ---
+    // =========================================================================
+    // 1. ASCENDING (UPWARD VELOCITY): player.vel.y < 0
+    // =========================================================================
     if (player.vel && player.vel.y < 0) {
-      const tileBottom = col.target.pos.y + (col.target.height ?? 24);
-      // Check if helmet penetrates a ceiling block located directly above the torso
-      if (col.target.pos.y < player.pos.y && playerTop < tileBottom && tileBottom <= player.pos.y + 8) {
-        // Halt upward momentum
+      // ONE-WAY FLOATING PLATFORMS: Jump through freely from below!
+      if (isPlatform) {
+        col.preventResolution();
+        return;
+      }
+
+      // SOLID CEILING BLOCKS (walls, stone ground blocks, masonry):
+      // When moving upward and hitting any overhead solid obstacle:
+      if (col.target.pos.y < player.pos.y + 10) {
+        // Halt all upward momentum immediately
         player.vel.y = 0;
 
-        // Force vertical separation downward
+        // Force downward separation so Mili never pops through the ceiling
         const penetrationY = tileBottom - playerTop;
-        if (penetrationY > 0 && penetrationY < 24) {
-          col.displacement.x = 0;
-          col.displacement.y = penetrationY;
-        }
+        col.displacement.x = 0;
+        col.displacement.y = Math.max(penetrationY, 1);
+        return;
       }
-      return;
     }
 
-    // --- CASE 2: FLOOR SEAMS & SOLID GROUND CONTACT ---
-    // A floor block is beneath the player when player's center is above tileTop + 6
-    if (player.pos.y < tileTop + 6) {
+    // =========================================================================
+    // 2. DESCENDING OR GROUNDED (DOWNWARD / ZERO VELOCITY): player.vel.y >= 0
+    // =========================================================================
+    if (!player.vel || player.vel.y >= 0) {
       const penetrationY = playerBottom - tileTop;
 
-      // If player's boots are landing on or resting on the top surface
-      if (penetrationY >= -1 && penetrationY < 24) {
-        // 1. Prevent SAT from kicking player sideways across floor seams
-        if (col.displacement.x !== 0) {
-          col.displacement.x = 0;
-        }
+      // Contact with the top surface of a floor block or platform:
+      // Player center is above the tile top surface (player.pos.y < tileTop + 10)
+      // and boots are at or penetrating into the surface (penetrationY >= -2)
+      if (player.pos.y < tileTop + 10 && penetrationY >= -2) {
+        // Prevent SAT from kicking player sideways across seams
+        col.displacement.x = 0;
 
-        // 2. Prevent SAT from pushing player downward into/through the floor
-        if (col.displacement.y > 0) {
-          col.displacement.y = -Math.max(penetrationY, 0.5);
-        } else if (penetrationY > 0 && col.displacement.y === 0) {
+        // Force upward displacement to keep boots firmly flush on the surface
+        if (penetrationY > 0) {
           col.displacement.y = -penetrationY;
+        } else if (col.displacement.y >= 0) {
+          col.displacement.y = -0.1;
         }
-        // If col.displacement.y < 0, keep it intact so isBottom() is true and Kaboom grounds player!
+        // If col.displacement.y < 0, it is already pushing up: keep it intact!
+        return;
+      }
+
+      // ONE-WAY PLATFORMS: If falling but player's feet are completely below
+      // the platform's top surface (e.g. falling alongside underneath the platform):
+      if (isPlatform && playerBottom > tileTop + 10) {
+        col.preventResolution();
+        return;
       }
     }
   });
