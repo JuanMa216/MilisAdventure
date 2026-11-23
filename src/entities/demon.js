@@ -237,8 +237,8 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
 
     if (isAttacking || demon.isHurt) return;
 
-    // Look for player in arena
-    const player = k.get("player")[0];
+    // Look for player in arena (O(1) fast lookup)
+    const player = gameState.player || k.get("player")[0];
     if (!player || player.isDead) {
       if (demon.curAnim() !== "idle") demon.play("idle");
       return;
@@ -294,7 +294,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
   // Handle sword melee attacks from player
   demon.onCollide("sword_hitbox", (hitbox) => {
     if (demon.isDead || demon.isHurt) return;
-    const player = k.get("player")[0];
+    const player = gameState.player || k.get("player")[0];
     const fromX = player ? player.pos.x : hitbox.pos.x;
     demon.takeDamage(1, fromX);
   });

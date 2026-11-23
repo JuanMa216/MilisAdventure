@@ -148,8 +148,8 @@ export function createSlime(k, x, y, patrolRange = 80) {
     const dt = k.dt();
     if (attackCooldown > 0) attackCooldown -= dt;
 
-    // Locate player in the scene
-    const player = k.get("player")[0];
+    // Locate player in the scene (O(1) fast lookup)
+    const player = gameState.player || k.get("player")[0];
     let dx = 0;
     let dy = 0;
     let dist = Infinity;

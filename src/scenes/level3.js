@@ -176,195 +176,253 @@ export function initLevel3(k) {
       });
     }
 
+    // Pre-calculate visual tiles grouped by row for zero-allocation, frustum-culled rendering
+    const visualRows = [];
+    const groundSegments = [];
+    const platformSegments = [];
+
     // Build the 70-row vertical tower
     for (let row = 0; row < rows; row++) {
       const line = layout[row];
-      for (let col = 0; col < cols; col++) {
+      const rowTiles = [];
+      let col = 0;
+
+      while (col < cols) {
         const char = line[col];
         const x = col * tileSize;
         const y = row * tileSize;
 
-        switch (char) {
-          case "#":
-            // Solid stone wall
-            k.add([
-              k.sprite("dungeon_wall"),
-              k.pos(x, y),
-              k.scale(tileSize / 16),
-              k.area(),
-              k.body({ isStatic: true }),
-              "solid",
-              "wall"
-            ]);
-            break;
-
-          case "=":
-            // Solid stone floor
-            k.add([
-              k.sprite("dungeon_top"),
-              k.pos(x, y),
-              k.scale(tileSize / 16),
-              k.area(),
-              k.body({ isStatic: true }),
-              "solid",
-              "ground"
-            ]);
-            break;
-
-          case "-":
-            // Thin floating stone platform (Gothic purple stone slab, seamlessly tileable)
-            k.add([
-              k.sprite("dungeon_platform"),
-              k.pos(x, y),
-              k.scale(tileSize / 16),
-              k.area(),
-              k.body({ isStatic: true }),
-              "solid",
-              "platform"
-            ]);
-            break;
-
-          case "^":
-            // Deadly dungeon spikes (precise player-favorable hazard hitbox)
-            k.add([
-              k.sprite("dungeon_spikes"),
-              k.pos(x, y),
-              k.scale(tileSize / 16),
-              k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
-              k.z(3),
-              "spikes"
-            ]);
-            break;
-
-          case "$":
-            // Gold coin
-            k.add([
-              k.sprite("coin"),
-              k.pos(x + 4, y + 4),
-              k.scale(tileSize / 16),
-              k.area(),
-              k.z(5),
-              "coin"
-            ]);
-            break;
-
-          case "G":
-            // Precious gem
-            k.add([
-              k.sprite("gem"),
-              k.pos(x + 4, y + 4),
-              k.scale(tileSize / 16),
-              k.area(),
-              k.z(5),
-              "gem"
-            ]);
-            break;
-
-          case "H":
-            // Restorative Heart
-            k.add([
-              k.sprite("heart_full"),
-              k.pos(x + 4, y + 4),
-              k.scale(tileSize / 16),
-              k.area(),
-              k.z(5),
-              "heart_item"
-            ]);
-            break;
-
-          case "T":
-            // Geyser / spring trampoline (flush on block below)
-            k.add([
-              k.sprite("spring"),
-              k.pos(x, y),
-              k.scale(tileSize / 16),
-              k.area({ shape: new k.Rect(k.vec2(0, 4), 16, 12) }),
-              k.z(4),
-              "spring"
-            ]);
-            break;
-
-          case "1":
-            // Moving Platform 1 (Horizontal patrol across row 33: x = 168 to 432, 2 tiles wide)
-            {
-              const plat = k.add([
-                k.sprite("dungeon_platform_2x"),
+        if (char === "#") {
+          rowTiles.push({ sprite: "dungeon_wall", pos: k.vec2(x, y) });
+          col++;
+        } else if (char === "=") {
+          const startCol = col;
+          while (col < cols && line[col] === "=") {
+            rowTiles.push({ sprite: "dungeon_top", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          groundSegments.push({ row, col: startCol, len: length });
+        } else if (char === "-") {
+          const startCol = col;
+          while (col < cols && line[col] === "-") {
+            rowTiles.push({ sprite: "dungeon_platform", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          platformSegments.push({ row, col: startCol, len: length });
+        } else {
+          switch (char) {
+            case "^":
+              // Deadly dungeon spikes (precise player-favorable hazard hitbox)
+              k.add([
+                k.sprite("dungeon_spikes"),
                 k.pos(x, y),
                 k.scale(tileSize / 16),
-                k.area(),
-                k.body({ isStatic: true }),
-                k.z(4),
-                "solid",
-                "platform",
-                "moving_platform",
-                {
-                  startX: 168,
-                  endX: 432,
-                  speed: 55,
-                  dir: 1,
-                  deltaX: 0,
-                  deltaY: 0
-                }
+                k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
+                k.z(3),
+                "spikes"
               ]);
-              movingPlatforms.push(plat);
-            }
-            break;
+              break;
 
-          case "2":
-            // Moving Elevator 2 (Vertical ascent: y = 912 to 1056, 2 tiles wide)
-            {
-              const elevator = k.add([
-                k.sprite("dungeon_platform_2x"),
-                k.pos(x, y),
+            case "$":
+              // Gold coin
+              k.add([
+                k.sprite("coin"),
+                k.pos(x + 4, y + 4),
                 k.scale(tileSize / 16),
                 k.area(),
-                k.body({ isStatic: true }),
-                k.z(4),
-                "solid",
-                "platform",
-                "moving_platform",
-                {
-                  startY: 912,
-                  endY: 1056,
-                  speed: 48,
-                  dir: -1,
-                  deltaX: 0,
-                  deltaY: 0
-                }
+                k.z(5),
+                "coin"
               ]);
-              movingPlatforms.push(elevator);
-            }
-            break;
+              break;
 
-          default:
-            break;
+            case "G":
+              // Precious gem
+              k.add([
+                k.sprite("gem"),
+                k.pos(x + 4, y + 4),
+                k.scale(tileSize / 16),
+                k.area(),
+                k.z(5),
+                "gem"
+              ]);
+              break;
+
+            case "H":
+              // Restorative Heart
+              k.add([
+                k.sprite("heart_full"),
+                k.pos(x + 4, y + 4),
+                k.scale(tileSize / 16),
+                k.area(),
+                k.z(5),
+                "heart_item"
+              ]);
+              break;
+
+            case "T":
+              // Geyser / spring trampoline (flush on block below)
+              k.add([
+                k.sprite("spring"),
+                k.pos(x, y),
+                k.scale(tileSize / 16),
+                k.area({ shape: new k.Rect(k.vec2(0, 4), 16, 12) }),
+                k.z(4),
+                "spring"
+              ]);
+              break;
+
+            case "1":
+              // Moving Platform 1 (Horizontal patrol across row 33: x = 168 to 432, 2 tiles wide)
+              {
+                const plat = k.add([
+                  k.sprite("dungeon_platform_2x"),
+                  k.pos(x, y),
+                  k.scale(tileSize / 16),
+                  k.area(),
+                  k.body({ isStatic: true }),
+                  k.z(4),
+                  "solid",
+                  "platform",
+                  "moving_platform",
+                  {
+                    startX: 168,
+                    endX: 432,
+                    speed: 55,
+                    dir: 1,
+                    deltaX: 0,
+                    deltaY: 0
+                  }
+                ]);
+                movingPlatforms.push(plat);
+              }
+              break;
+
+            case "2":
+              // Moving Elevator 2 (Vertical ascent: y = 912 to 1056, 2 tiles wide)
+              {
+                const elevator = k.add([
+                  k.sprite("dungeon_platform_2x"),
+                  k.pos(x, y),
+                  k.scale(tileSize / 16),
+                  k.area(),
+                  k.body({ isStatic: true }),
+                  k.z(4),
+                  "solid",
+                  "platform",
+                  "moving_platform",
+                  {
+                    startY: 912,
+                    endY: 1056,
+                    speed: 48,
+                    dir: -1,
+                    deltaX: 0,
+                    deltaY: 0
+                  }
+                ]);
+                movingPlatforms.push(elevator);
+              }
+              break;
+
+            default:
+              break;
+          }
+          col++;
         }
       }
+      visualRows.push(rowTiles);
     }
 
-    // Initialize HUD
-    const hud = createHUD(k, "NIVEL 3: LA TORRE");
+    // Dedicated frustum-culled tilemap renderer:
+    // Only draws the rows visible within viewport (+ 48px vertical safety margin)
+    // Zero WebGL overhead for off-screen rows!
+    const tilemap = k.add([
+      k.z(1)
+    ]);
+    const tileScale = k.vec2(tileSize / 16, tileSize / 16);
 
-    // Continuous solid foundation under Row 68 floor to eliminate seam tunneling
+    tilemap.onDraw(() => {
+      const camY = k.camPos().y;
+      const minRow = Math.max(0, Math.floor((camY - 228) / tileSize));
+      const maxRow = Math.min(rows - 1, Math.ceil((camY + 228) / tileSize));
+
+      for (let r = minRow; r <= maxRow; r++) {
+        const rowTiles = visualRows[r];
+        for (let i = 0; i < rowTiles.length; i++) {
+          const t = rowTiles[i];
+          k.drawSprite({
+            sprite: t.sprite,
+            pos: t.pos,
+            scale: tileScale
+          });
+        }
+      }
+    });
+
+    // Consolidated Static Physics Colliders:
+    // Replaces 496 individual tile collision bodies with 37 seamless bodies!
+
+    // 1. Continuous Left Tower Wall Boundary (cols 0-1: x = 0..48)
     k.add([
-      k.rect(23 * tileSize, 48),
-      k.pos(2 * tileSize, 68 * tileSize),
+      k.rect(48, mapHeight),
+      k.pos(0, 0),
       k.area(),
       k.body({ isStatic: true }),
       k.opacity(0),
       "solid",
-      "ground"
+      "wall"
     ]);
 
-    // Solid foundation bedrock under tower base to prevent physics tunneling
+    // 2. Continuous Right Tower Wall Boundary (cols 25-26: x = 600..648)
     k.add([
-      k.rect(27 * tileSize, 120),
-      k.pos(0, 1680),
+      k.rect(48, mapHeight),
+      k.pos(mapWidth - 48, 0),
+      k.area(),
+      k.body({ isStatic: true }),
+      k.opacity(0),
+      "solid",
+      "wall"
+    ]);
+
+    // 3. Continuous Bedrock Base Boundary (Row 69 and beneath: y = 1656+)
+    k.add([
+      k.rect(mapWidth, 120),
+      k.pos(0, 69 * tileSize),
       k.area(),
       k.body({ isStatic: true }),
       k.opacity(0),
       "solid"
     ]);
+
+    // 4. Consolidated Ground Colliders (Continuous seamless rectangles for all '=' segments)
+    for (const seg of groundSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "ground"
+      ]);
+    }
+
+    // 5. Consolidated Platform Colliders (Continuous seamless rectangles for all '-' segments)
+    for (const seg of platformSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "platform"
+      ]);
+    }
+
+    // Initialize HUD
+    const hud = createHUD(k, "NIVEL 3: LA TORRE");
 
     // Spawn player at "@" position (flush on base floor)
     player = createPlayer(k, 120, 1618, true, 1760);
@@ -421,14 +479,13 @@ export function initLevel3(k) {
           }
         }
 
-        // Drag player if standing on moving platform
+        // Drag player if standing on moving platform (fast zero-allocation check)
         if (player && player.isGrounded()) {
-          const pBounds = player.worldArea().bbox();
-          const platBounds = plat.worldArea().bbox();
+          const platWidth = 48;
           const isStanding =
-            pBounds.pos.x + pBounds.width > platBounds.pos.x &&
-            pBounds.pos.x < platBounds.pos.x + platBounds.width &&
-            Math.abs(pBounds.pos.y + pBounds.height - platBounds.pos.y) < 6;
+            player.pos.x + 8 > plat.pos.x &&
+            player.pos.x - 8 < plat.pos.x + platWidth &&
+            Math.abs((player.pos.y + 12) - plat.pos.y) < 6;
 
           if (isStanding) {
             player.pos.x += plat.deltaX;
@@ -532,11 +589,11 @@ export function initLevel3(k) {
     k.onUpdate(() => {
       if (!player) return;
 
-      // Clamp player within horizontal tower walls
-      if (player.pos.x < 18) {
-        player.pos.x = 18;
-      } else if (player.pos.x > mapWidth - 18) {
-        player.pos.x = mapWidth - 18;
+      // Clamp player within horizontal tower walls (lateral bounds: x = 55 to 593)
+      if (player.pos.x < 55) {
+        player.pos.x = 55;
+      } else if (player.pos.x > mapWidth - 55) {
+        player.pos.x = mapWidth - 55;
       }
 
       // Instant death if falling into bottom pit (y > 1720)

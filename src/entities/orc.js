@@ -161,7 +161,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
       attackCooldown -= dt;
     }
 
-    const player = k.get("player")[0];
+    const player = gameState.player || k.get("player")[0];
     let dx = 0;
     let dy = 0;
     let dist = Infinity;

@@ -380,5 +380,13 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
+  // Fast O(1) player lookup reference for AI agents across scenes
+  gameState.player = player;
+  player.onDestroy(() => {
+    if (gameState.player === player) {
+      gameState.player = null;
+    }
+  });
+
   return player;
 }

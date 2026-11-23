@@ -8,6 +8,7 @@ export const gameState = {
   collectedBook: null, // null | "red" | "green" | "blue"
   secretScoreThreshold: 15000, 
   foundEasterEgg: false,
+  player: null,
 
   reset() {
     this.score = 0;
@@ -16,6 +17,7 @@ export const gameState = {
     this.hasKey = false;
     this.collectedBook = null;
     this.foundEasterEgg = false;
+    this.player = null;
   },
 
   loseLife() {
