@@ -27,7 +27,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     // Rect center y = 1.5, height = 21 -> top = -9, bottom = +12.
     // When scaled by 24/21, total height is 24px and boots rest 100% flush on the block surface.
     k.area({ shape: new k.Rect(k.vec2(0, 1.5), 14, 21) }),
-    k.body({ jumpForce: 380, maxVelocity: 500 }),
+    k.body({ jumpForce: 380, maxVelocity: 420 }),
     k.anchor("center"),
     k.z(10),
     "player",
@@ -214,8 +214,8 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     if (player.isDead) return;
 
     // Safety 1: Prevent physics tunneling during high falls or delta time lag spikes
-    if (player.vel && player.vel.y > 480) {
-      player.vel.y = 480;
+    if (player.vel && player.vel.y > 420) {
+      player.vel.y = 420;
     }
 
     // Safety 2: Bottomless pit death threshold
@@ -313,26 +313,29 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       }
     }
 
-    // Case 2: FLOOR SEAM - Standing, landing, or jumping on a floor block beneath the player
-    if (col.target.pos.y >= player.pos.y) {
+    // Case 2: FLOOR SEAM & DOWNWARD TUNNELING PREVENTION
+    // When landing or falling on a floor/platform block beneath the player:
+    // A floor block must ALWAYS support the player upward and NEVER push them downward or sideways.
+    if (col.target.pos.y >= player.pos.y - 6) {
       const tileTop = col.target.pos.y;
       const playerBottom = player.pos.y + 13.71; // Bottom of boots
       const penetrationY = playerBottom - tileTop;
 
-      // Check if feet are resting on or slightly penetrating the top surface of the floor tile
-      if (penetrationY >= -1 && penetrationY <= 12) {
-        // Prevent SAT from displacing player horizontally on internal vertical edges
-        if (col.displacement.x !== 0) {
-          col.displacement.x = 0;
-          if (penetrationY > 0) {
-            col.displacement.y = -penetrationY;
-          } else {
-            col.displacement.y = 0;
-          }
-          if (player.vel && player.vel.y > 0) {
-            player.vel.y = 0;
-          }
+      // If boots are at or penetrating into the floor block from above
+      if (penetrationY >= -1 && penetrationY < 24) {
+        // 1. NEVER allow SAT to push player horizontally on a floor tile (internal seam glitch)
+        col.displacement.x = 0;
+
+        // 2. NEVER allow SAT to push player downward through the floor (minimum penetration glitch)
+        // Always push upward so the player's boots rest exactly flush on tileTop
+        if (penetrationY > 0) {
+          col.displacement.y = -penetrationY;
+        } else {
+          col.displacement.y = 0;
         }
+
+        // Keep player.vel.y > 0 intact so Kaboom's internal onPhysicsResolve
+        // detects isFalling() === true, sets curPlatform = col.target, and fires "ground"!
       }
     }
   });
