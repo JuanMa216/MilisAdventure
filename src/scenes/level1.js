@@ -208,6 +208,23 @@ export function initLevel1(k) {
       "boundary"
     ]);
 
+    // Solid foundation bedrock under ground tiles to prevent physics tunneling
+    k.add([
+      k.rect(480, 100),
+      k.pos(0, 360),
+      k.area(),
+      k.body({ isStatic: true }),
+      k.opacity(0),
+      "solid"
+    ]);
+    k.add([
+      k.rect(1200, 100),
+      k.pos(624, 360),
+      k.area(),
+      k.body({ isStatic: true }),
+      "solid"
+    ]);
+
     // Animated glowing "SALIDA" indicator above the castle door
     const exitLabel = k.add([
       k.text("SALIDA", { font: "pressstart", size: 8 }),
@@ -220,8 +237,8 @@ export function initLevel1(k) {
       exitLabel.opacity = k.wave(0.4, 1, k.time() * 4);
     });
 
-    // Spawn player at "@" symbol position
-    player = createPlayer(k, 40, 280, true);
+    // Spawn player at "@" symbol position (aligned flush with ground)
+    player = createPlayer(k, 40, 322, true);
 
     // Spawn Slime enemies at predefined positions
     slimes.push(createSlime(k, 300, 160, 60));

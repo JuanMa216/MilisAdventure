@@ -27,7 +27,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     // Rect center y = 1.5, height = 21 -> top = -9, bottom = +12.
     // When scaled by 24/21, total height is 24px and boots rest 100% flush on the block surface.
     k.area({ shape: new k.Rect(k.vec2(0, 1.5), 14, 21) }),
-    k.body({ jumpForce: 380 }),
+    k.body({ jumpForce: 380, maxVelocity: 500 }),
     k.anchor("center"),
     k.z(10),
     "player",
@@ -213,9 +213,15 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
   player.onUpdate(() => {
     if (player.isDead) return;
 
-    // Hazard: Falling into bottomless pit is an INSTAKILL (Req-4)
-    // Level 1 & 2 have map height 360 (pit > 380). Level 3 (Tower) has map height 1680 (pit > 1720).
-    const deathY = maxFallY ?? (gameState.currentLevel === 3 ? 1720 : 380);
+    // Safety 1: Prevent physics tunneling during high falls or delta time lag spikes
+    if (player.vel && player.vel.y > 480) {
+      player.vel.y = 480;
+    }
+
+    // Safety 2: Bottomless pit death threshold
+    // Level 1, 2, Dungeons & Secret have map height 360 (pit death at y > 420, well off-screen).
+    // Level 3 (Tower) has map height 1680 (pit death at y > 1760).
+    const deathY = maxFallY ?? (gameState.currentLevel === 3 ? 1760 : 420);
     if (player.pos.y > deathY) {
       player.die();
       return;

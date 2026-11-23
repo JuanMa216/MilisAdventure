@@ -343,8 +343,18 @@ export function initLevel3(k) {
     // Initialize HUD
     const hud = createHUD(k, "NIVEL 3: LA TORRE");
 
-    // Spawn player at "@" position (col 5, row 67 -> x=120, y=1608)
-    player = createPlayer(k, 120, 1608, true, 1720);
+    // Solid foundation bedrock under tower base to prevent physics tunneling
+    k.add([
+      k.rect(27 * tileSize, 120),
+      k.pos(0, 1680),
+      k.area(),
+      k.body({ isStatic: true }),
+      k.opacity(0),
+      "solid"
+    ]);
+
+    // Spawn player at "@" position (flush on base floor)
+    player = createPlayer(k, 120, 1618, true, 1760);
 
     // Spawn tower guards
     enemies.push(createSlime(k, 5 * tileSize, 62 * tileSize, 45));

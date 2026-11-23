@@ -84,6 +84,16 @@ export function initSecret(k) {
       ]);
     }
 
+    // Solid foundation bedrock under floor to prevent physics tunneling
+    k.add([
+      k.rect(27 * tileSize, 100),
+      k.pos(0, floorY + 24),
+      k.area(),
+      k.body({ isStatic: true }),
+      k.opacity(0),
+      "solid"
+    ]);
+
     // Left and Right Invisible Walls
     k.add([
       k.rect(12, 360),
@@ -273,8 +283,8 @@ export function initSecret(k) {
       trophyLabel.pos.y = (floorY - 44) + Math.sin(k.time() * 4) * 3;
     });
 
-    // 9. Mili Player Entity
-    const player = createPlayer(k, 40, floorY - 40, true, 420);
+    // 9. Mili Player Entity (spawn flush on ground)
+    const player = createPlayer(k, 40, floorY - 14, true, 420);
 
     // Bounce Mili high on spring trampolines
     player.onCollide("spring_secret", () => {

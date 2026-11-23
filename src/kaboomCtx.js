@@ -5,7 +5,8 @@ export const k = kaboom({
   height: 360,
   letterbox: true,
   canvas: document.getElementById("game"),
-  background: [18, 16, 25]
+  background: [18, 16, 25],
+  maxFPS: 60
 });
 
 // Fullscreen toggle with F key

@@ -368,8 +368,27 @@ export function initLevel2(k) {
       }
     });
 
-    // Spawn player at "@" position (col 2, row 13 -> x=48, y=290)
-    player = createPlayer(k, 48, 290, true);
+    // Solid foundation bedrock under ground tiles to prevent physics tunneling
+    const bedrockSegments = [
+      { x: 0, w: 408 },
+      { x: 792, w: 312 },
+      { x: 1176, w: 336 },
+      { x: 1680, w: 192 },
+      { x: 2184, w: 696 }
+    ];
+    bedrockSegments.forEach((seg) => {
+      k.add([
+        k.rect(seg.w, 100),
+        k.pos(seg.x, 360),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid"
+      ]);
+    });
+
+    // Spawn player at "@" position (flush on ground)
+    player = createPlayer(k, 48, 322, true);
 
     // Spawn Slimes across the cavern
     enemies.push(createSlime(k, 10 * 24, 6 * 24, 35));

@@ -226,7 +226,22 @@ export function initDungeonRed(k) {
       portalLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
-    player = createPlayer(k, 48, 290, true);
+    // Solid foundation bedrock under ground tiles to prevent physics tunneling
+    [
+      { x: 0, w: 408 },
+      { x: 480, w: 480 }
+    ].forEach((seg) => {
+      k.add([
+        k.rect(seg.w, 100),
+        k.pos(seg.x, 360),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid"
+      ]);
+    });
+
+    player = createPlayer(k, 48, 322, true);
     enemies.push(createSlime(k, 10 * 24, 5 * 24, 30));
     enemies.push(createOrc(k, 28 * 24, 13 * 24, 40));
 

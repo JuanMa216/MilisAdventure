@@ -225,7 +225,22 @@ export function initDungeonGreen(k) {
       portalLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
-    player = createPlayer(k, 48, 290, true);
+    // Solid foundation bedrock under ground tiles to prevent physics tunneling
+    [
+      { x: 0, w: 216 },
+      { x: 288, w: 672 }
+    ].forEach((seg) => {
+      k.add([
+        k.rect(seg.w, 100),
+        k.pos(seg.x, 360),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid"
+      ]);
+    });
+
+    player = createPlayer(k, 48, 322, true);
     enemies.push(createSlime(k, 5 * 24, 7 * 24, 30));
     enemies.push(createSlime(k, 22 * 24, 13 * 24, 35));
 
