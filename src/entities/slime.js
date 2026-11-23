@@ -227,8 +227,9 @@ export function createSlime(k, x, y, patrolRange = 80) {
         dir = dx >= 0 ? 1 : -1;
         slime.flipX = dir < 0;
 
-        // Check if close enough for an attack lunge
-        if (Math.abs(dx) <= attackDistance && Math.abs(dy) <= 28 && attackCooldown <= 0) {
+        // Check if close enough for an attack lunge (only if player is at ground level, not jumping overhead)
+        const playerAtLungeLevel = dy >= -10 && dy <= 24;
+        if (Math.abs(dx) <= attackDistance && playerAtLungeLevel && attackCooldown <= 0) {
           slime.state = "attack";
           attackCooldown = 2.0;
           slime.play("attack");

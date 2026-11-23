@@ -486,12 +486,23 @@ export function initLevel3(k) {
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || enemy.isHurt) return;
 
-      // Stomp jump kill / damage: if player falls onto enemy from above
-      if (player.vel.y > 0 && player.pos.y < enemy.pos.y - 4) {
-        if (enemy.takeDamage) {
+      // Robust stomp check: Player is above enemy in the air or falling
+      const isStomping =
+        (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
+        (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
+
+      if (isStomping) {
+        if (enemy.is("demon")) {
+          // Boss: Demon King takes 1 damage from aerial stomp
+          enemy.takeDamage(1, player.pos.x);
+        } else if (enemy.is("orc")) {
           enemy.takeDamage(2, player.pos.x);
+        } else {
+          enemy.die();
         }
-        player.jump(280);
+        player.jump(player.jumpForce * 0.85);
+        player.hasDoubleJumped = false;
+        k.play("jump");
         return;
       }
 

@@ -283,8 +283,10 @@ export function initLevel1(k) {
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead) return;
 
-      // Stomp check: If player is falling from above onto enemy
-      const isStomping = player.pos.y < enemy.pos.y - 6;
+      // Robust stomp check: Player is above enemy in the air or falling
+      const isStomping =
+        (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
+        (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
 
       if (isStomping) {
         enemy.die();

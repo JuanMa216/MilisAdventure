@@ -274,13 +274,15 @@ export function initDungeonRed(k) {
 
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || player.isHurt) return;
-      const isStomping = player.pos.y < enemy.pos.y - 6;
-      if (isStomping && player.isFalling()) {
+      const isStomping =
+        (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
+        (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
+      if (isStomping) {
         if (enemy.is("orc")) enemy.takeDamage(2, player.pos.x);
         else enemy.die();
         player.jump(player.jumpForce * 0.85);
         player.hasDoubleJumped = false;
-        k.play("spring");
+        k.play("jump");
       } else {
         const knockDir = player.pos.x < enemy.pos.x ? -1 : 1;
         player.receiveDamage(knockDir);
