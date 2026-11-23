@@ -32,7 +32,7 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
      - Ataque de tajo con espada y choque telúrico que genera temblor en pantalla.
      - **Fase 2 (Enrage Mode)** al llegar a 5 HP o menos (aura de fuego, velocidad y agresividad aumentadas).
 
-4. ** Easter Egg Secreto: El Origen de la Leyenda**
+4. **Easter Egg Secreto: El Origen de la Leyenda**
    ???
 
 ---
