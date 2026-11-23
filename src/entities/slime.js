@@ -32,7 +32,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
     k.pos(x, y),
     // Tight hitbox for the slime body (top at -2, bottom at +12, flush with ground)
     k.area({ shape: new k.Rect(k.vec2(0, 5), 18, 14) }),
-    k.body(),
+    k.body({ maxVelocity: 350 }),
     k.anchor("center"),
     k.z(5),
     "enemy",
@@ -139,6 +139,11 @@ export function createSlime(k, x, y, patrolRange = 80) {
   // --- Main AI Behavior Loop ---
   slime.onUpdate(() => {
     if (slime.isDead) return;
+
+    // Safety: prevent physics tunneling through platforms on high framerate jumps or lag spikes
+    if (slime.vel && slime.vel.y > 350) {
+      slime.vel.y = 350;
+    }
 
     const dt = k.dt();
     if (attackCooldown > 0) attackCooldown -= dt;
@@ -264,10 +269,12 @@ export function createSlime(k, x, y, patrolRange = 80) {
     }
   });
 
-  // Solid obstacle collision: reverse direction
-  slime.onCollide("solid", () => {
-    dir = -dir;
-    slime.flipX = dir < 0;
+  // Solid obstacle collision: reverse direction on lateral wall impact
+  slime.onCollide("solid", (obj, col) => {
+    if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
+      dir = -dir;
+      slime.flipX = dir < 0;
+    }
   });
 
   // React to player melee attack sword hitbox

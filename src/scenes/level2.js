@@ -390,17 +390,17 @@ export function initLevel2(k) {
     // Spawn player at "@" position (flush on ground)
     player = createPlayer(k, 48, 322, true);
 
-    // Spawn Slimes across the cavern
-    enemies.push(createSlime(k, 10 * 24, 6 * 24, 35));
-    enemies.push(createSlime(k, 36 * 24, 13 * 24, 45));
-    enemies.push(createSlime(k, 60 * 24, 13 * 24, 45));
-    enemies.push(createSlime(k, 88 * 24, 13 * 24, 40));
+    // Spawn Slimes across the cavern (flush on platform/ground surfaces)
+    enemies.push(createSlime(k, 9 * 24, 156, 24));
+    enemies.push(createSlime(k, 38 * 24, 324, 48));
+    enemies.push(createSlime(k, 73 * 24, 324, 40));
+    enemies.push(createSlime(k, 110 * 24, 324, 45));
 
-    // Spawn Orc Warriors at key camps and high platforms
-    enemies.push(createOrc(k, 25 * 24, 6 * 24, 45));
-    enemies.push(createOrc(k, 51 * 24, 6 * 24, 50));
-    enemies.push(createOrc(k, 75 * 24, 6 * 24, 45));
-    enemies.push(createOrc(k, 100 * 24, 6 * 24, 40));
+    // Spawn Orc Warriors on solid platforms and camps (flush on surface, zero clipping)
+    enemies.push(createOrc(k, 25 * 24, 157, 40));
+    enemies.push(createOrc(k, 50 * 24, 157, 40));
+    enemies.push(createOrc(k, 56 * 24, 277, 36));
+    enemies.push(createOrc(k, 104 * 24, 325, 45));
 
     // Initialize HUD (Req-3 & Req-4)
     createHUD(k, "Nivel 2: Cavernas");

@@ -286,5 +286,51 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
+  // --- Ceiling / Internal Seam Glitch Prevention ---
+  // When jumping under adjacent blocks (seam between Block A and Block B), SAT can choose
+  // horizontal displacement due to tiny X overlap, failing to cancel upward velocity and allowing
+  // the player to climb/tunnel through the ceiling on repeated jumps.
+  player.onBeforePhysicsResolve((col) => {
+    if (!col.target.is("solid")) return;
+
+    // Only intervene when player is ascending (moving upward)
+    if (player.vel && player.vel.y < 0) {
+      const tileBottom = col.target.pos.y + (col.target.height ?? 24);
+      const playerTop = player.pos.y - 10.3; // Top of helmet
+
+      // Check if helmet penetrates a ceiling block located directly above the torso
+      if (col.target.pos.y < player.pos.y && playerTop < tileBottom && tileBottom <= player.pos.y + 8) {
+        // 1. Immediately halt upward momentum
+        player.vel.y = 0;
+
+        // 2. Correct seam calculation: if displacement wasn't pushing down, force downward separation
+        const penetrationY = tileBottom - playerTop;
+        if (penetrationY > 0 && penetrationY < 24) {
+          col.displacement.x = 0;
+          col.displacement.y = penetrationY;
+        }
+      }
+    }
+  });
+
+  // Additional safety callbacks for upward ceiling contact
+  player.onCollide("solid", (solid) => {
+    if (player.vel && player.vel.y < 0 && solid.pos.y < player.pos.y) {
+      player.vel.y = 0;
+    }
+  });
+
+  player.onCollideUpdate("solid", (solid) => {
+    if (player.vel && player.vel.y < 0 && solid.pos.y < player.pos.y) {
+      player.vel.y = 0;
+    }
+  });
+
+  player.onHeadbutt(() => {
+    if (player.vel) {
+      player.vel.y = 0;
+    }
+  });
+
   return player;
 }

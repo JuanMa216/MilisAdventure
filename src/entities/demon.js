@@ -30,7 +30,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
     k.scale(1.8),
     // Precision hitbox calibrated to feet (y=+9 in 100x100 frame) and horns (y=-11)
     k.area({ shape: new k.Rect(k.vec2(2, -1), 20, 20) }),
-    k.body(),
+    k.body({ maxVelocity: 400 }),
     k.anchor("center"),
     k.z(15),
     "enemy",
@@ -219,6 +219,11 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
   // Main Boss AI Update Loop
   demon.onUpdate(() => {
     if (demon.isDead) return;
+
+    // Safety: prevent physics tunneling through throne arena
+    if (demon.vel && demon.vel.y > 400) {
+      demon.vel.y = 400;
+    }
 
     if (attackCooldown > 0) {
       attackCooldown -= k.dt();

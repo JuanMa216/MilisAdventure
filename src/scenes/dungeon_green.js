@@ -241,8 +241,8 @@ export function initDungeonGreen(k) {
     });
 
     player = createPlayer(k, 48, 322, true);
-    enemies.push(createSlime(k, 5 * 24, 7 * 24, 30));
-    enemies.push(createSlime(k, 22 * 24, 13 * 24, 35));
+    enemies.push(createSlime(k, 5 * 24, 180, 24));
+    enemies.push(createSlime(k, 22 * 24, 324, 36));
 
     createHUD(k, "Cámara Esmeralda");
 

@@ -242,8 +242,8 @@ export function initDungeonRed(k) {
     });
 
     player = createPlayer(k, 48, 322, true);
-    enemies.push(createSlime(k, 10 * 24, 5 * 24, 30));
-    enemies.push(createOrc(k, 28 * 24, 13 * 24, 40));
+    enemies.push(createSlime(k, 10 * 24, 132, 24));
+    enemies.push(createOrc(k, 28 * 24, 325, 40));
 
     createHUD(k, "Cripta Carmesí");
 

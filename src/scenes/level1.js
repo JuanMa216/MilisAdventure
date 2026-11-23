@@ -240,11 +240,11 @@ export function initLevel1(k) {
     // Spawn player at "@" symbol position (aligned flush with ground)
     player = createPlayer(k, 40, 322, true);
 
-    // Spawn Slime enemies at predefined positions
-    slimes.push(createSlime(k, 300, 160, 60));
-    slimes.push(createSlime(k, 700, 100, 70));
-    slimes.push(createSlime(k, 1100, 160, 80));
-    slimes.push(createSlime(k, 1350, 100, 60));
+    // Spawn Slime enemies resting flush on their platform surfaces
+    slimes.push(createSlime(k, 312, 180, 24));
+    slimes.push(createSlime(k, 1008, 132, 36));
+    slimes.push(createSlime(k, 1128, 204, 24));
+    slimes.push(createSlime(k, 1320, 276, 24));
 
     // Initialize HUD (Req-3 & Req-4)
     createHUD(k, "Nivel 1: Castillo");

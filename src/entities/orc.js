@@ -33,7 +33,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
     k.scale(24 / 16),
     // Precision hitbox aligned to feet (y=+7 in 100x100 frame) and head (y=-9)
     k.area({ shape: new k.Rect(k.vec2(0, -1), 16, 16) }),
-    k.body(),
+    k.body({ maxVelocity: 350 }),
     k.anchor("center"),
     k.z(6),
     "enemy",
@@ -149,6 +149,12 @@ export function createOrc(k, x, y, patrolRange = 70) {
   // AI Update Loop
   orc.onUpdate(() => {
     if (orc.isDead) return;
+
+    // Safety: prevent physics tunneling through platforms on high framerate jumps or lag spikes
+    if (orc.vel && orc.vel.y > 350) {
+      orc.vel.y = 350;
+    }
+
     const dt = k.dt();
 
     if (attackCooldown > 0) {
@@ -269,10 +275,12 @@ export function createOrc(k, x, y, patrolRange = 70) {
     }
   });
 
-  // Turn around on solid obstacles
-  orc.onCollide("solid", () => {
-    dir = -dir;
-    orc.flipX = dir < 0;
+  // Turn around on solid obstacles (lateral wall impact only)
+  orc.onCollide("solid", (obj, col) => {
+    if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
+      dir = -dir;
+      orc.flipX = dir < 0;
+    }
   });
 
   // Hurt from player sword melee attack

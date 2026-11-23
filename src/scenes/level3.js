@@ -356,15 +356,15 @@ export function initLevel3(k) {
     // Spawn player at "@" position (flush on base floor)
     player = createPlayer(k, 120, 1618, true, 1760);
 
-    // Spawn tower guards
-    enemies.push(createSlime(k, 5 * tileSize, 62 * tileSize, 45));
-    enemies.push(createOrc(k, 19 * tileSize, 56 * tileSize, 50));
-    enemies.push(createSlime(k, 12 * tileSize, 47 * tileSize, 40));
-    enemies.push(createOrc(k, 18 * tileSize, 36 * tileSize, 50));
-    enemies.push(createOrc(k, 13 * tileSize, 23 * tileSize, 55));
+    // Spawn tower guards (flush on platform surfaces, zero clipping)
+    enemies.push(createSlime(k, 5 * tileSize, 1500, 24));
+    enemies.push(createOrc(k, 19 * tileSize, 1357, 36));
+    enemies.push(createSlime(k, 12 * tileSize, 1140, 32));
+    enemies.push(createOrc(k, 20 * tileSize, 901, 36));
+    enemies.push(createOrc(k, 13 * tileSize, 565, 36));
 
-    // Spawn Demon King at row 4, col 13 (x=312, y=96)
-    demonBoss = createDemon(k, 312, 110, null, () => {
+    // Spawn Demon King at row 6, col 13 (flush on throne arena platform at y=168)
+    demonBoss = createDemon(k, 312, 152, null, () => {
       // Callback on boss defeat -> Check if Easter Egg secret level is unlocked!
       k.wait(1.5, () => {
         if (gameState.score >= gameState.secretScoreThreshold) {
