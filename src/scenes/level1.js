@@ -146,11 +146,11 @@ export function initLevel1(k) {
           k.z(2),
           "gem"
         ],
-        // RottingPixels Castle Spikes
+        // RottingPixels Castle Spikes (precise player-favorable hazard hitbox)
         "^": () => [
           k.sprite("castle_spikes"),
           k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(0, 8), 16, 8) }),
+          k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
           k.z(2),
           "hazard",
           "spikes"

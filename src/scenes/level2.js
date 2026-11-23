@@ -168,11 +168,11 @@ export function initLevel2(k) {
           k.z(2),
           "gem"
         ],
-        // Mineral Stalagmites Hazard
+        // Mineral Stalagmites Hazard (precise player-favorable hazard hitbox)
         "^": () => [
           k.sprite("cave_spikes"),
           k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(0, 8), 16, 8) }),
+          k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
           k.z(2),
           "spikes",
           "hazard"
