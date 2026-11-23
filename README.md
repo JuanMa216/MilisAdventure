@@ -58,20 +58,15 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
 
 ### Pasos
 
-1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/JuanMa216/Computacion-Grafica.git
-   cd Computacion-Grafica
-   ```
+# 1. Clonar el repositorio
+git clone https://github.com/JuanMa216/MilisAdventure.git
+cd MilisAdventure
 
-2. Instalar dependencias:
-   ```bash
-   npm install
-   ```
+# 2. Instalar dependencias
+npm install
 
-3. Iniciar el servidor de desarrollo:
-   ```bash
-   npm run dev
+# 3. Iniciar el juego en desarrollo
+npm run dev
    ```
    Abre tu navegador en `http://localhost:3000/`.
 
