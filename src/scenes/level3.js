@@ -217,7 +217,7 @@ export function initLevel3(k) {
               k.sprite("dungeon_platform"),
               k.pos(x, y),
               k.scale(tileSize / 16),
-              k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 9) }),
+              k.area(),
               k.body({ isStatic: true }),
               "solid",
               "platform"
@@ -291,10 +291,11 @@ export function initLevel3(k) {
                 k.sprite("dungeon_platform_2x"),
                 k.pos(x, y),
                 k.scale(tileSize / 16),
-                k.area({ shape: new k.Rect(k.vec2(0, 0), 32, 9) }),
+                k.area(),
                 k.body({ isStatic: true }),
                 k.z(4),
                 "solid",
+                "platform",
                 "moving_platform",
                 {
                   startX: 168,
@@ -316,10 +317,11 @@ export function initLevel3(k) {
                 k.sprite("dungeon_platform_2x"),
                 k.pos(x, y),
                 k.scale(tileSize / 16),
-                k.area({ shape: new k.Rect(k.vec2(0, 0), 32, 9) }),
+                k.area(),
                 k.body({ isStatic: true }),
                 k.z(4),
                 "solid",
+                "platform",
                 "moving_platform",
                 {
                   startY: 912,
@@ -342,6 +344,17 @@ export function initLevel3(k) {
 
     // Initialize HUD
     const hud = createHUD(k, "NIVEL 3: LA TORRE");
+
+    // Continuous solid foundation under Row 68 floor to eliminate seam tunneling
+    k.add([
+      k.rect(23 * tileSize, 48),
+      k.pos(2 * tileSize, 68 * tileSize),
+      k.area(),
+      k.body({ isStatic: true }),
+      k.opacity(0),
+      "solid",
+      "ground"
+    ]);
 
     // Solid foundation bedrock under tower base to prevent physics tunneling
     k.add([
@@ -409,9 +422,18 @@ export function initLevel3(k) {
         }
 
         // Drag player if standing on moving platform
-        if (player && player.isGrounded() && player.isColliding(plat)) {
-          player.pos.x += plat.deltaX;
-          player.pos.y += plat.deltaY;
+        if (player && player.isGrounded()) {
+          const pBounds = player.worldArea().bbox();
+          const platBounds = plat.worldArea().bbox();
+          const isStanding =
+            pBounds.pos.x + pBounds.width > platBounds.pos.x &&
+            pBounds.pos.x < platBounds.pos.x + platBounds.width &&
+            Math.abs(pBounds.pos.y + pBounds.height - platBounds.pos.y) < 6;
+
+          if (isStanding) {
+            player.pos.x += plat.deltaX;
+            player.pos.y += plat.deltaY;
+          }
         }
       }
     });

@@ -127,7 +127,7 @@ export function initSecret(k) {
           k.sprite("dungeon_platform"),
           k.pos(p.x + i * tileSize, p.y),
           k.scale(tileSize / 16),
-          k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 9) }),
+          k.area(),
           k.body({ isStatic: true }),
           k.z(2),
           "solid",
