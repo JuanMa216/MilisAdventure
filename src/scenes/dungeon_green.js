@@ -53,13 +53,13 @@ export function initDungeonGreen(k) {
 
     // 40 cols x 15 rows
     const mapLayout = [
-      "                                        ",
-      "                     $$$                ",
+      " G G G                                  ",
+      " G G                  $$$               ",
       "                    =====            D  ",
       "                                        ",
       "          G              G         ==== ",
       "         ---            ---        #### ",
-      "                                        ",
+      "                                S       ",
       "    S          ---             ---      ",
       "   ---                                  ",
       "        T             M                 ",
