@@ -325,7 +325,7 @@ export function initSecret(k) {
 
     // Gem collection (+250)
     player.onCollide("secret_gem", (g) => {
-      k.play("gem");
+      k.play("coin");
       g.destroy();
       gameState.addScore(250);
     });
