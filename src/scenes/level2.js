@@ -340,6 +340,7 @@ export function initLevel2(k) {
         k.body({ isStatic: true }),
         k.opacity(0),
         "solid",
+        "ground",
         "platform"
       ]);
     }
@@ -377,9 +378,10 @@ export function initLevel2(k) {
       k.body({ isStatic: true }),
       k.z(2),
       "solid",
+      "ground",
       "platform",
       "moving_platform",
-      { baseX: 18 * 24, deltaX: 0, width: 24, height: 24 }
+      { baseX: 18 * 24, deltaX: 0 }
     ]);
     plat1.onUpdate(() => {
       const prevX = plat1.pos.x;
@@ -398,9 +400,10 @@ export function initLevel2(k) {
       k.body({ isStatic: true }),
       k.z(2),
       "solid",
+      "ground",
       "platform",
       "moving_platform",
-      { baseY: 9 * 24, deltaY: 0, width: 24, height: 24 }
+      { baseY: 9 * 24, deltaY: 0 }
     ]);
     plat2.onUpdate(() => {
       const prevY = plat2.pos.y;
@@ -419,9 +422,10 @@ export function initLevel2(k) {
       k.body({ isStatic: true }),
       k.z(2),
       "solid",
+      "ground",
       "platform",
       "moving_platform",
-      { baseX: 73 * 24, deltaX: 0, width: 24, height: 24 }
+      { baseX: 73 * 24, deltaX: 0 }
     ]);
     plat3.onUpdate(() => {
       const prevX = plat3.pos.x;

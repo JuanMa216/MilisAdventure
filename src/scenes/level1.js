@@ -281,6 +281,7 @@ export function initLevel1(k) {
         k.body({ isStatic: true }),
         k.opacity(0),
         "solid",
+        "ground",
         "platform"
       ]);
     }

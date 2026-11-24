@@ -303,7 +303,7 @@ export function initDungeonRed(k) {
       ]);
     }
 
-    // 3. Continuous One-Way Floating Platform Colliders
+    // 3. Continuous Platform Colliders (Solid Ground)
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -312,6 +312,7 @@ export function initDungeonRed(k) {
         k.body({ isStatic: true }),
         k.opacity(0),
         "solid",
+        "ground",
         "platform"
       ]);
     }
