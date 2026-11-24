@@ -9,6 +9,7 @@ import { initDungeonGreen } from "./scenes/dungeon_green.js";
 import { initVictory } from "./scenes/victory.js";
 import { initGameOver } from "./scenes/gameover.js";
 import { initSecret } from "./scenes/secret.js";
+import { initEasterEggCreep } from "./scenes/easteregg_creep.js";
 
 // --- 1. Load Character Sprites ---
 k.loadSprite("player", "sprites/player/mili.png", {
@@ -92,6 +93,19 @@ k.loadSprite("slime_basic", "sprites/enemies/slime_basic.png", {
   }
 });
 
+k.loadSprite("blood_monster", "sprites/enemies/blood_monster.png", {
+  sliceX: 8,
+  sliceY: 6,
+  anims: {
+    idle: { from: 0, to: 5, loop: true, speed: 6 },
+    walk: { from: 8, to: 15, loop: true, speed: 8 },
+    attack1: { from: 16, to: 23, loop: false, speed: 10 },
+    attack2: { from: 24, to: 31, loop: false, speed: 10 },
+    hurt: { from: 32, to: 35, loop: false, speed: 8 },
+    death: { from: 40, to: 43, loop: false, speed: 8 }
+  }
+});
+
 // --- 2. RottingPixels Dark Fantasy Medieval Tilesets ---
 // Castle (Level 1)
 k.loadSprite("stone_top", "sprites/tiles/stone_top.png");
@@ -130,6 +144,7 @@ k.loadSprite("bg_level1", "sprites/backgrounds/bg_level1.png");
 k.loadSprite("bg_level2", "sprites/backgrounds/bg_level2.png");
 k.loadSprite("bg_level3", "sprites/backgrounds/bg_level3.png");
 k.loadSprite("bg_secret", "sprites/backgrounds/easter_egg.jpg");
+k.loadSprite("bg_easteregg_face", "sprites/backgrounds/easter_egg_face.jpg");
 
 // --- 4. Retro Audio ---
 k.loadSound("jump", "sounds/jump.wav");
@@ -152,6 +167,7 @@ initDungeonGreen(k);
 initVictory(k);
 initGameOver(k);
 initSecret(k);
+initEasterEggCreep(k);
 
 // Start at Level 1, or Level 2 / Level 3 / Throne / Secret via URL query param (?level=2, ?level=3, ?level=throne, ?level=secret)
 const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -160,10 +176,15 @@ let initialScene = "level1";
 if (levelParam === "2") initialScene = "level2";
 else if (levelParam === "3") initialScene = "level3";
 else if (levelParam === "throne") initialScene = "throne";
+else if (levelParam === "red" || levelParam === "dungeon_red") initialScene = "dungeon_red";
+else if (levelParam === "green" || levelParam === "dungeon_green") initialScene = "dungeon_green";
 else if (levelParam === "victory") initialScene = "victory";
 else if (levelParam === "secret" || levelParam === "easteregg") {
   gameState.score = 5500;
   initialScene = "secret";
+}
+else if (levelParam === "creep" || levelParam === "easteregg2") {
+  initialScene = "easteregg_creep";
 }
 
 k.go(initialScene);

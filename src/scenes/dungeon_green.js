@@ -1,15 +1,18 @@
 import { createPlayer } from "../entities/player.js";
 import { createSlime } from "../entities/slime.js";
-import { createOrc } from "../entities/orc.js";
 import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
  * Secret Bonus Dungeon: "La Garganta Esmeralda"
  * 
- * Triggered when entering the catacomb portal with the Green Grimoire (book_green).
- * Rewards player with +500 bonus points, moving platform precision trials over stalagmites,
- * and gives the clue that only the Celestial Blue Grimoire opens the Demon King's Throne.
+ * Features & Architecture:
+ * - Triggered when entering the catacomb portal with the Green Grimoire (book_green).
+ * - Full performance optimization: zero-allocation frustum culling on static tilemap.
+ * - Continuous consolidated colliders for ground, walls, and platforms (eliminates floor phasing).
+ * - Deep foundation bedrock on row 14 to eliminate physics tunneling.
+ * - Vertical moving platform over toxic stalagmites with zero-allocation passenger dragging.
+ * - Rewards player with +500 bonus points and returns safely to Level 2.
  * 
  * @param {import("kaboom").KaboomCtx} k - Kaboom context
  */
@@ -18,7 +21,13 @@ export function initDungeonGreen(k) {
     k.setGravity(980);
     k.camPos(k.width() / 2, k.height() / 2);
 
-    // Emerald toxic subterranean lighting
+    const tileSize = 24;
+    const cols = 40;
+    const rows = 15;
+    const mapWidth = cols * tileSize;   // 960 px
+    const mapHeight = rows * tileSize; // 360 px
+
+    // --- Atmospheric Toxic Emerald Cavern Background ---
     k.add([
       k.sprite("bg_level2"),
       k.pos(0, 0),
@@ -28,7 +37,17 @@ export function initDungeonGreen(k) {
       k.z(-10)
     ]);
 
-    // Hint banner
+    // Ominous emerald green overlay
+    k.add([
+      k.rect(k.width(), k.height()),
+      k.pos(0, 0),
+      k.color(8, 26, 16),
+      k.opacity(0.35),
+      k.fixed(),
+      k.z(-8)
+    ]);
+
+    // Hint banner under HUD
     k.add([
       k.rect(520, 20),
       k.pos(k.width() / 2, 48),
@@ -51,28 +70,29 @@ export function initDungeonGreen(k) {
       k.z(81)
     ]);
 
-    // 40 cols x 15 rows
+    // 40 columns x 15 rows map
     const mapLayout = [
-      " G G G                                  ",
-      " G G                  $$$               ",
-      "                    =====            D  ",
-      "                                        ",
-      "          G              G         ==== ",
-      "         ---            ---        #### ",
-      "                                S       ",
-      "    S          ---             ---      ",
-      "   ---                                  ",
-      "        T             M                 ",
-      "       ===           ---           T    ",
-      "       ###   ^^^^^          ^^^^  ===   ",
-      "            =======        ====== ###   ",
-      " @          #######   S    ######       ",
-      "=========   ============================"
+      " G G G                                  ", // 0
+      " G G                  $$$               ", // 1
+      "                    =====            D  ", // 2
+      "                                        ", // 3
+      "          G              G         ==== ", // 4
+      "         ---            ---        #### ", // 5
+      "                                S       ", // 6
+      "    S          ---             ---      ", // 7
+      "   ---                                  ", // 8
+      "        T             M                 ", // 9
+      "       ===           ---           T    ", // 10
+      "       ###   ^^^^^          ^^^^  ===   ", // 11
+      "            =======        ====== ###   ", // 12
+      " @          #######   S    ######       ", // 13
+      "=========   ============================"  // 14
     ];
 
     let player = null;
     const enemies = [];
 
+    // Helper for score/text popups
     function showPopup(pos, txt, col = k.rgb(255, 230, 80)) {
       const popup = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -87,136 +107,258 @@ export function initDungeonGreen(k) {
       k.wait(0.6, () => popup.destroy());
     }
 
-    const level = k.addLevel(mapLayout, {
-      tileWidth: 24,
-      tileHeight: 24,
-      pos: k.vec2(0, 0),
-      tiles: {
-        "=": () => [
-          k.sprite("cave_top"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid",
-          "ground"
-        ],
-        "#": () => [
-          k.sprite("cave_wall"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid"
-        ],
-        "-": () => [
-          k.sprite("wood_platform"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid",
-          "platform"
-        ],
-        "$": () => [
-          k.sprite("coin"),
-          k.scale(24 / 18),
-          k.area(),
-          k.anchor("center"),
-          k.z(2),
-          "coin"
-        ],
-        "G": () => [
-          k.sprite("gem"),
-          k.scale(24 / 18),
-          k.area(),
-          k.anchor("center"),
-          k.z(2),
-          "gem"
-        ],
-        "^": () => [
-          k.sprite("cave_spikes"),
-          k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
-          k.z(2),
-          "spikes",
-          "hazard"
-        ],
-        "T": () => [
-          k.sprite("spring"),
-          k.scale(24 / 18),
-          k.area(),
-          k.z(2),
-          "spring"
-        ],
-        "D": () => [
-          k.sprite("door_open"),
-          k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
-          k.z(2),
-          "return_portal"
-        ]
+    // Pre-calculate visual tiles grouped by column for frustum culling
+    const visualCols = Array.from({ length: cols }, () => []);
+    const groundSegments = [];
+    const wallSegments = [];
+    const platformSegments = [];
+
+    let playerSpawnX = 48;
+    let playerSpawnY = 322;
+    let movingPlatX = 22 * tileSize;
+    let movingPlatY = 9 * tileSize;
+
+    // Parse map layout
+    for (let row = 0; row < rows; row++) {
+      const line = mapLayout[row];
+      let col = 0;
+
+      while (col < cols) {
+        const char = line[col];
+        const x = col * tileSize;
+        const y = row * tileSize;
+
+        if (char === "=") {
+          const startCol = col;
+          while (col < cols && line[col] === "=") {
+            visualCols[col].push({ sprite: "cave_top", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          groundSegments.push({ row, col: startCol, len: length });
+        } else if (char === "#") {
+          const startCol = col;
+          while (col < cols && line[col] === "#") {
+            visualCols[col].push({ sprite: "cave_wall", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          wallSegments.push({ row, col: startCol, len: length });
+        } else if (char === "-") {
+          const startCol = col;
+          while (col < cols && line[col] === "-") {
+            visualCols[col].push({ sprite: "wood_platform", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          platformSegments.push({ row, col: startCol, len: length });
+        } else {
+          switch (char) {
+            case "$":
+              k.add([
+                k.sprite("coin"),
+                k.pos(x + 12, y + 12),
+                k.scale(tileSize / 18),
+                k.area(),
+                k.anchor("center"),
+                k.z(2),
+                "coin"
+              ]);
+              break;
+
+            case "G":
+              k.add([
+                k.sprite("gem"),
+                k.pos(x + 12, y + 12),
+                k.scale(tileSize / 18),
+                k.area(),
+                k.anchor("center"),
+                k.z(2),
+                "gem"
+              ]);
+              break;
+
+            case "^":
+              k.add([
+                k.sprite("cave_spikes"),
+                k.pos(x, y),
+                k.scale(tileSize / 16),
+                k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
+                k.z(2),
+                "spikes",
+                "hazard"
+              ]);
+              break;
+
+            case "T":
+              k.add([
+                k.sprite("spring"),
+                k.pos(x, y),
+                k.scale(tileSize / 16),
+                k.area({ shape: new k.Rect(k.vec2(0), 16, 16) }),
+                k.z(2),
+                "spring"
+              ]);
+              break;
+
+            case "D":
+              k.add([
+                k.sprite("door_open"),
+                k.pos(x, y),
+                k.scale(tileSize / 16),
+                k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
+                k.z(2),
+                "return_portal"
+              ]);
+              break;
+
+            case "@":
+              playerSpawnX = x + 12;
+              playerSpawnY = y + 10;
+              break;
+
+            case "S":
+              enemies.push(createSlime(k, x + 12, y + 12, 28));
+              break;
+
+            case "M":
+              movingPlatX = x;
+              movingPlatY = y;
+              break;
+
+            default:
+              break;
+          }
+          col++;
+        }
+      }
+    }
+
+    // --- Dedicated Frustum-Culled Tilemap Renderer ---
+    const tilemap = k.add([k.z(1)]);
+    const tileScale = k.vec2(tileSize / 16, tileSize / 16);
+
+    tilemap.onDraw(() => {
+      const camX = k.camPos().x;
+      const minCol = Math.max(0, Math.floor((camX - 368) / tileSize));
+      const maxCol = Math.min(cols - 1, Math.ceil((camX + 368) / tileSize));
+
+      for (let c = minCol; c <= maxCol; c++) {
+        const colTiles = visualCols[c];
+        for (let i = 0; i < colTiles.length; i++) {
+          const t = colTiles[i];
+          k.drawSprite({
+            sprite: t.sprite,
+            pos: t.pos,
+            scale: tileScale
+          });
+        }
       }
     });
 
-    const mapWidth = 40 * 24;
-    const mapHeight = 15 * 24;
+    // --- Consolidated Static Physics Colliders (Zero Seam Hitching & Zero Phasing) ---
 
-    // Boundaries
+    // 1. Continuous Ground Colliders
+    // Extends bottom foundation ground (row 14) 120px deep to completely eliminate physics tunneling
+    for (const seg of groundSegments) {
+      const height = seg.row === 14 ? 120 : tileSize;
+      k.add([
+        k.rect(seg.len * tileSize, height),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "ground"
+      ]);
+    }
+
+    // 2. Continuous Wall Colliders
+    for (const seg of wallSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "wall"
+      ]);
+    }
+
+    // 3. Continuous One-Way Floating Platform Colliders
+    for (const seg of platformSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "platform"
+      ]);
+    }
+
+    // 4. Map Boundaries (Lateral Walls)
     k.add([
-      k.rect(32, mapHeight + 600),
-      k.pos(-32, -300),
+      k.rect(48, mapHeight + 600),
+      k.pos(-48, -300),
       k.area(),
       k.body({ isStatic: true }),
       k.opacity(0),
-      "solid"
+      "solid",
+      "wall"
     ]);
 
     k.add([
-      k.rect(32, mapHeight + 600),
+      k.rect(48, mapHeight + 600),
       k.pos(mapWidth, -300),
       k.area(),
       k.body({ isStatic: true }),
       k.opacity(0),
-      "solid"
+      "solid",
+      "wall"
     ]);
 
-    // Vertical Moving Platform
+    // --- Vertical Moving Platform (Zero-Allocation Performance) ---
     const movingPlat = k.add([
       k.sprite("wood_platform"),
-      k.pos(22 * 24, 9 * 24),
-      k.scale(24 / 16),
+      k.pos(movingPlatX, movingPlatY),
+      k.scale(tileSize / 16),
       k.area(),
       k.body({ isStatic: true }),
       k.z(2),
       "solid",
       "platform",
       {
-        baseY: 9 * 24,
+        baseY: movingPlatY,
         deltaY: 0
       }
     ]);
+
     movingPlat.onUpdate(() => {
       const prevY = movingPlat.pos.y;
       movingPlat.pos.y = movingPlat.baseY + Math.sin(k.time() * 2) * 45;
       movingPlat.deltaY = movingPlat.pos.y - prevY;
 
+      // Drag player if standing on the platform (fast check without bbox allocations)
       if (player && player.isGrounded()) {
-        const pBounds = player.worldArea().bbox();
-        const platBounds = movingPlat.worldArea().bbox();
-        if (
-          pBounds.pos.x + pBounds.width > platBounds.pos.x &&
-          pBounds.pos.x < platBounds.pos.x + platBounds.width &&
-          Math.abs(pBounds.pos.y + pBounds.height - platBounds.pos.y) < 6
-        ) {
+        const platWidth = tileSize * (tileSize / 16);
+        const isStanding =
+          player.pos.x + 8 > movingPlat.pos.x &&
+          player.pos.x - 8 < movingPlat.pos.x + platWidth &&
+          Math.abs((player.pos.y + 13.7) - movingPlat.pos.y) < 6;
+
+        if (isStanding) {
           player.pos.y += movingPlat.deltaY;
         }
       }
     });
 
+    // Animated glowing label above Return Portal
     const portalLabel = k.add([
       k.text("RETORNO", { font: "pressstart", size: 8 }),
-      k.pos(38 * 24 + 12, 3 * 24 - 10),
+      k.pos(38 * tileSize + 12, 3 * tileSize - 10),
       k.anchor("center"),
       k.color(120, 240, 160),
       k.z(10)
@@ -225,28 +367,15 @@ export function initDungeonGreen(k) {
       portalLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
-    // Solid foundation bedrock under ground tiles to prevent physics tunneling
-    [
-      { x: 0, w: 216 },
-      { x: 288, w: 672 }
-    ].forEach((seg) => {
-      k.add([
-        k.rect(seg.w, 100),
-        k.pos(seg.x, 360),
-        k.area(),
-        k.body({ isStatic: true }),
-        k.opacity(0),
-        "solid"
-      ]);
-    });
+    // Spawn player
+    player = createPlayer(k, playerSpawnX, playerSpawnY, true);
 
-    player = createPlayer(k, 48, 322, true);
-    enemies.push(createSlime(k, 5 * 24, 180, 24));
-    enemies.push(createSlime(k, 22 * 24, 324, 36));
-
+    // Initialize HUD
     createHUD(k, "Cámara Esmeralda");
 
-    // Collisions
+    // --- Interactive Collisions & Triggers ---
+
+    // 1. Coins & Collectibles
     player.onCollide("coin", (coin) => {
       coin.destroy();
       k.play("coin");
@@ -261,21 +390,29 @@ export function initDungeonGreen(k) {
       showPopup(gem.pos, "+250", k.rgb(120, 255, 180));
     });
 
+    // 2. Hazards & Springs
     player.onCollide("spikes", () => {
       player.receiveDamage(0);
     });
 
-    player.onCollide("spring", () => {
+    player.onCollide("spring", (spr) => {
       k.play("spring");
       player.jump(player.jumpForce * 1.55);
       player.hasDoubleJumped = false;
+      spr.scale = k.vec2((tileSize / 16) * 1.3, (tileSize / 16) * 0.7);
+      k.wait(0.15, () => {
+        spr.scale = k.vec2(tileSize / 16, tileSize / 16);
+      });
     });
 
+    // 3. Enemy Interaction (Stomp vs Shield Block vs Lateral Hit)
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || player.isHurt) return;
+
       const isStomping =
         (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
+
       if (isStomping) {
         enemy.die();
         player.jump(player.jumpForce * 0.85);
@@ -287,6 +424,7 @@ export function initDungeonGreen(k) {
       }
     });
 
+    // 4. Return Portal Transition back to Level 2
     let returned = false;
     player.onCollide("return_portal", () => {
       if (returned) return;
@@ -325,16 +463,27 @@ export function initDungeonGreen(k) {
       ]);
 
       k.wait(2.8, () => {
+        // Return to Level 2 with key reset so player can search for the true book
         gameState.hasKey = false;
         gameState.collectedBook = null;
         k.go("level2");
       });
     });
 
+    // --- Main Update Loop ---
     k.onUpdate(() => {
       if (!player) return;
+
+      // Clamping within map lateral bounds
       if (player.pos.x < 10) player.pos.x = 10;
       else if (player.pos.x > mapWidth - 10) player.pos.x = mapWidth - 10;
+
+      // Instant fatal death if falling into the bottomless pit (gap at col 9-11)
+      if (player.pos.y > mapHeight + 50 && !player.isDead) {
+        player.die();
+      }
+
+      // Smooth horizontal camera tracking
       const targetCamX = Math.max(k.width() / 2, Math.min(player.pos.x, mapWidth - k.width() / 2));
       k.camPos(targetCamX, k.height() / 2);
     });
