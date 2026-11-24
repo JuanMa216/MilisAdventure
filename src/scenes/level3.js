@@ -103,9 +103,9 @@ export function initLevel3(k) {
       "##           D           ##", // 1 Throne Gate (Door to Boss Arena)
       "##                       ##", // 2 Space for 2-tile door height
       "##        =======        ##", // 3 Gate threshold floor
-      "##                       ##", // 4
-      "##   ^^^^         ^^^^   ##", // 5 Summit spikes
-      "##=======================##", // 6 Summit Citadel floor (Skeletons)
+      "##   =                =  ##", // 4
+      "##       ^^^^ ^^^^       ##", // 5 Summit spikes
+      "##==  ===============  ==##", // 6 Summit Citadel floor (Skeletons)
       "##                       ##", // 7
       "##   T                 T ##", // 8 Trampolines to Summit
       "##  ===       G       ===##", // 9 High balconies with Gem
@@ -142,10 +142,10 @@ export function initLevel3(k) {
       "##   ======              ##", // 40 Stone ledge (Basic Slime)
       "##           $$$         ##", // 41 Gold coins
       "##                       ##", // 42
-      "##   ^^^^^               ##", // 43 Spikes
+      "##                       ##", // 43 Spikes
       "##===   =================##", // 44 Tier 2 floor
       "##                       ##", // 45
-      "##          ---          ##", // 46 Wood platform (Skeleton)
+      "##                      ##", // 46 Wood platform (Skeleton)
       "##       =======         ##", // 47
       "##    G                  ##", // 48 Gem
       "##  ---             ---  ##", // 49 Side platforms
@@ -154,7 +154,7 @@ export function initLevel3(k) {
       "##        =======        ##", // 52 Stone platform (Orc Guard)
       "##   T                   ##", // 53 Trampoline
       "##  ===           ===    ##", // 54
-      "##                 ---   ##", // 55 Wooden beam (Basic Slime)
+      "##                       ##", // 55 Wooden beam (Basic Slime)
       "##              =======  ##", // 56
       "##                       ##", // 57
       "##        -----          ##", // 58 Wood platform (Slime)
