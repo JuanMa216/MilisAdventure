@@ -16,6 +16,8 @@ import { gameState } from "../state.js";
  * @returns {import("kaboom").GameObj} The player game object
  */
 export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFallY = null) {
+  let activeSwordHitbox = null;
+
   const player = k.add([
     k.sprite("player", { anim: "idle" }),
     k.pos(x, y),
@@ -48,6 +50,12 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         this.isDead = true;
         this.invulnerable = true;
         this.isHurt = true;
+        this.isAttacking = false;
+        if (activeSwordHitbox) {
+          activeSwordHitbox.destroy();
+          activeSwordHitbox = null;
+        }
+        this.collisionIgnore = ["*"];
         gameState.lives = 0;
         k.play("hit");
 
@@ -101,6 +109,11 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
 
         this.invulnerable = true;
         this.isHurt = true;
+        this.isAttacking = false;
+        if (activeSwordHitbox) {
+          activeSwordHitbox.destroy();
+          activeSwordHitbox = null;
+        }
         k.play("hit");
 
         // Knockback physics
@@ -134,15 +147,23 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
 
         // Spawn a temporary melee attack hitbox in front of the player
         const attackOffsetX = this.facing === "right" ? 18 : -18;
+        if (activeSwordHitbox) {
+          activeSwordHitbox.destroy();
+          activeSwordHitbox = null;
+        }
         const hitbox = k.add([
           k.pos(this.pos.x + attackOffsetX, this.pos.y + 2),
           k.area({ shape: new k.Rect(k.vec2(0), 22, 22) }),
           k.anchor("center"),
           "sword_hitbox"
         ]);
+        activeSwordHitbox = hitbox;
 
         k.wait(0.25, () => {
-          hitbox.destroy();
+          if (activeSwordHitbox === hitbox) {
+            hitbox.destroy();
+            activeSwordHitbox = null;
+          }
         });
 
         this.onAnimEnd((anim) => {

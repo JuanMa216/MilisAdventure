@@ -3,6 +3,7 @@ import { gameState } from "./state.js";
 import { initLevel1 } from "./scenes/level1.js";
 import { initLevel2 } from "./scenes/level2.js";
 import { initLevel3 } from "./scenes/level3.js";
+import { initThrone } from "./scenes/throne.js";
 import { initDungeonRed } from "./scenes/dungeon_red.js";
 import { initDungeonGreen } from "./scenes/dungeon_green.js";
 import { initVictory } from "./scenes/victory.js";
@@ -64,6 +65,33 @@ k.loadSprite("demon", "sprites/boss/demon/Demon_A.png", {
   }
 });
 
+k.loadSprite("skeleton_base", "sprites/enemies/skeleton_base.png", {
+  sliceX: 12,
+  sliceY: 6,
+  anims: {
+    idle: { from: 0, to: 10, loop: true, speed: 7 },
+    walk: { from: 12, to: 19, loop: true, speed: 8 },
+    attack: { from: 24, to: 33, loop: false, speed: 12 },
+    jump: { from: 36, to: 47, loop: false, speed: 12 },
+    hurt: { from: 48, to: 49, loop: false, speed: 6 },
+    die: { from: 60, to: 65, loop: false, speed: 8 }
+  }
+});
+
+k.loadSprite("slime_basic", "sprites/enemies/slime_basic.png", {
+  sliceX: 12,
+  sliceY: 7,
+  anims: {
+    idle: { from: 0, to: 9, loop: true, speed: 7 },
+    walk: { from: 12, to: 21, loop: true, speed: 9 },
+    jump: { from: 24, to: 33, loop: false, speed: 10 },
+    attack: { from: 36, to: 45, loop: false, speed: 12 },
+    special: { from: 48, to: 55, loop: false, speed: 10 },
+    hurt: { from: 60, to: 61, loop: false, speed: 6 },
+    die: { from: 72, to: 80, loop: false, speed: 10 }
+  }
+});
+
 // --- 2. RottingPixels Dark Fantasy Medieval Tilesets ---
 // Castle (Level 1)
 k.loadSprite("stone_top", "sprites/tiles/stone_top.png");
@@ -118,18 +146,20 @@ k.loadFont("vt323", "fonts/VT323.ttf");
 initLevel1(k);
 initLevel2(k);
 initLevel3(k);
+initThrone(k);
 initDungeonRed(k);
 initDungeonGreen(k);
 initVictory(k);
 initGameOver(k);
 initSecret(k);
 
-// Start at Level 1, or Level 2 / Level 3 / Secret via URL query param (?level=2, ?level=3, ?level=secret)
+// Start at Level 1, or Level 2 / Level 3 / Throne / Secret via URL query param (?level=2, ?level=3, ?level=throne, ?level=secret)
 const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 const levelParam = urlParams?.get("level");
 let initialScene = "level1";
 if (levelParam === "2") initialScene = "level2";
 else if (levelParam === "3") initialScene = "level3";
+else if (levelParam === "throne") initialScene = "throne";
 else if (levelParam === "victory") initialScene = "victory";
 else if (levelParam === "secret" || levelParam === "easteregg") {
   gameState.score = 5500;

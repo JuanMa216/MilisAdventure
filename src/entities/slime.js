@@ -113,6 +113,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
 
         // Play the melting death animation from the spritesheet
         this.play("die");
+        this.collisionIgnore = ["*"];
         k.wait(0.8, () => {
           this.destroy();
         });

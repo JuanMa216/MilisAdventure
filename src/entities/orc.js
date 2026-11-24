@@ -25,6 +25,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
   const attackDistance = 38;
 
   let attackCooldown = 0;
+  let activeHitbox = null;
 
   const orc = k.add([
     k.sprite("orc", { anim: "walk" }),
@@ -50,6 +51,11 @@ export function createOrc(k, x, y, patrolRange = 70) {
         if (this.isDead || this.isHurt) return;
         this.hp -= dmg;
         k.play("hit");
+
+        if (activeHitbox) {
+          activeHitbox.destroy();
+          activeHitbox = null;
+        }
 
         if (this.hp <= 0) {
           this.die();
@@ -94,6 +100,10 @@ export function createOrc(k, x, y, patrolRange = 70) {
         if (this.isDead) return;
         this.isDead = true;
         this.state = "die";
+        if (activeHitbox) {
+          activeHitbox.destroy();
+          activeHitbox = null;
+        }
 
         k.play("hit");
         gameState.addScore(300);
@@ -112,8 +122,8 @@ export function createOrc(k, x, y, patrolRange = 70) {
         k.wait(0.7, () => scorePopup.destroy());
 
         this.play("death");
-        this.unuse("area");
-        this.unuse("body");
+        // Ignore all future collisions safely without unusing components (prevents Kaboom spatial grid corruption)
+        this.collisionIgnore = ["*"];
 
         k.wait(0.6, () => {
           this.destroy();
@@ -239,13 +249,23 @@ export function createOrc(k, x, y, patrolRange = 70) {
           const attackOffsetX = dir * 18;
           k.wait(0.2, () => {
             if (orc.isDead || orc.state !== "attack") return;
+            if (activeHitbox) {
+              activeHitbox.destroy();
+              activeHitbox = null;
+            }
             const clubHitbox = k.add([
               k.pos(orc.pos.x + attackOffsetX, orc.pos.y),
               k.area({ shape: new k.Rect(k.vec2(0), 20, 20) }),
               k.anchor("center"),
               "orc_attack"
             ]);
-            k.wait(0.2, () => clubHitbox.destroy());
+            activeHitbox = clubHitbox;
+            k.wait(0.2, () => {
+              if (activeHitbox === clubHitbox) {
+                clubHitbox.destroy();
+                activeHitbox = null;
+              }
+            });
           });
 
           k.wait(0.6, () => {

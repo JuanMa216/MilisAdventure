@@ -1,22 +1,29 @@
 import { createPlayer } from "../entities/player.js";
 import { createSlime } from "../entities/slime.js";
+import { createBasicSlime } from "../entities/basic_slime.js";
 import { createOrc } from "../entities/orc.js";
-import { createDemon } from "../entities/demon.js";
+import { createSkeleton } from "../entities/skeleton.js";
 import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Level 3: "La Torre del Trono del Rey Demonio" (Diseño Vertical: 27 cols x 70 filas)
+ * Level 3: "La Gran Torre de la Fortaleza Maldita" (Diseño Vertical: 27 cols x 70 filas)
  * 
  * Features & Architecture:
- * - Vertical tower layout: Player begins at the bottom dungeon foundation (y ≈ 1608px)
- *   and ascends 4 vertical tiers of ancient fortress ruins to the rooftop throne.
+ * - Vertical tower layout: Player begins at the dungeon foundation (y ≈ 1618px)
+ *   and ascends 5 vertical tiers of ancient fortress ruins to the rooftop Throne Gateway.
  * - Dynamic vertical camera tracking: Smoothly locks at width/2 and tracks Mili in Y,
  *   clamped precisely within [height/2, mapHeight - height/2].
  * - Moving platform elevator & horizontal gears across the tower abyss.
  * - Geyser trampoline mushrooms propelling the player through spike corridors.
- * - Final Boss: Rey Demonio (Demon King, 10 HP) with multi-phase AI, cleave and slam attacks,
- *   enrage mode (under 50% HP), HUD health bar, and victory scene transition.
+ * - New Enemy Roster:
+ *     * Skeleton Warriors (ancient swordsmen, 2 HP, melee slash attack)
+ *     * Basic Slimes (bouncy toxic ooze, jump lunges)
+ *     * Orc Warriors (heavy club attack, 3 HP)
+ *     * Classic Slimes (patrol hazards)
+ * - Summit Gateway: Reaching the summit reveals the Throne Gate (exit door) leading
+ *   to the new dedicated Boss Arena scene ("throne").
+ * - High-performance Frustum Culling & Consolidated Physics Colliders (solid 60 FPS).
  * 
  * @param {import("kaboom").KaboomCtx} k - Kaboom context
  */
@@ -67,7 +74,7 @@ export function initLevel3(k) {
     ]);
 
     k.add([
-      k.text("OBJETIVO: ¡Asciende por la torre y derrota al Rey Demonio!", {
+      k.text("OBJETIVO: ¡Asciende por la torre hasta la Puerta del Trono!", {
         font: "pressstart",
         size: 6.5
       }),
@@ -79,84 +86,92 @@ export function initLevel3(k) {
     ]);
 
     // --- Vertical Tower Map Grid (27 columns x 70 rows = 648 x 1680 px) ---
+    // Legend:
+    // '#' dungeon_wall (boundary / masonry)
+    // '=' dungeon_top (ground)
+    // '-' dungeon_platform (one-way platform)
+    // '^' dungeon_spikes (hazard)
+    // '$' coin
+    // 'G' gem
+    // 'H' heart
+    // 'T' trampoline
+    // 'D' door to Throne Room
+    // '1' horizontal moving platform
+    // '2' vertical moving elevator
     const layout = [
       "##                       ##", // 0
-      "##                       ##", // 1
-      "##                       ##", // 2
-      "##                       ##", // 3
-      "##           B           ##", // 4 Boss spawn (Demon King)
-      "##       O       O       ##", // 5
-      "##                       ##", // 6
-      "##    =================  ##", // 7 Grand Throne Floor (cols 6..22)
-      "##                       ##", // 8
-      "##   T                 T ##", // 9 Super Trampolines to Throne
-      "##  ===       G       ===##", // 10 Balcony platforms
-      "##           ---         ##", // 11 Center stepping platform
-      "##                       ##", // 12
-      "##       ---     ---     ##", // 13 Approach platforms
-      "##===                 ===##", // 14 Gate to throne arena
-      "##                       ##", // 15
-      "##         ^^^^^         ##", // 16
-      "##        =======        ##", // 17
-      "##                       ##", // 18
-      "##   T       $       T   ##", // 19
-      "##  ===             ===  ##", // 20
-      "##         S   S         ##", // 21
-      "##         -----         ##", // 22
-      "##          OOO          ##", // 23 Orc guard
-      "##        =======        ##", // 24
-      "##                       ##", // 25
-      "##   ---           ---   ##", // 26
-      "##                       ##", // 27
-      "##=================   ===##", // 28
-      "##                       ##", // 29
-      "##  HHH                  ##", // 30
-      "## ======                ##", // 31 Heart item
-      "##                       ##", // 32
-      "##         1             ##", // 33 Moving platform 1 (horizontal)
-      "##                       ##", // 34
+      "##           D           ##", // 1 Throne Gate (Door to Boss Arena)
+      "##                       ##", // 2 Space for 2-tile door height
+      "##        =======        ##", // 3 Gate threshold floor
+      "##                       ##", // 4
+      "##   ^^^^         ^^^^   ##", // 5 Summit spikes
+      "##=======================##", // 6 Summit Citadel floor (Skeletons)
+      "##                       ##", // 7
+      "##   T                 T ##", // 8 Trampolines to Summit
+      "##  ===       G       ===##", // 9 High balconies with Gem
+      "##           ---         ##", // 10 Center step
+      "##                       ##", // 11
+      "##       ---     ---     ##", // 12 Approach ledges
+      "##===                 ===##", // 13 Fortress Gate tier
+      "##                       ##", // 14
+      "##         ^^^^^         ##", // 15 Spikes
+      "##        =======        ##", // 16 Stone floor (Skeleton)
+      "##                       ##", // 17
+      "##   T       $       T   ##", // 18 Trampolines
+      "##  ===             ===  ##", // 19
+      "##         -----         ##", // 20 Wooden bridge (Basic Slime)
+      "##                       ##", // 21
+      "##          HHH          ##", // 22 Hearts
+      "##        =======        ##", // 23 Stone floor (Orc Guard)
+      "##                       ##", // 24
+      "##   ---           ---   ##", // 25 Side ledges
+      "##                       ##", // 26
+      "##=================   ===##", // 27 Tier 3 rampart
+      "##                       ##", // 28
+      "##  ===                  ##", // 29
+      "##         1             ##", // 30 Moving platform 1
+      "##                       ##", // 31
+      "##                 ====  ##", // 32 Platform (Skeleton)
+      "##                       ##", // 33
+      "##       ---   ---       ##", // 34 Wooden stepping platforms
       "##                       ##", // 35
-      "##                       ##", // 36 Orc guard
-      "##                  O    ##", // 37
-      "##                ====== ##", // 38
-      "##         2             ##", // 39 Moving elevator 2 (vertical)
-      "##                       ##", // 40
-      "##   ======              ##", // 41
-      "##           $$$         ##", // 42
-      "##                       ##", // 43
-      "##                       ##", // 44
-      "##===   =================##", // 45
-      "##                       ##", // 46
-      "##          S            ##", // 47 Slime
-      "##       =======         ##", // 48
-      "##    G                  ##", // 49 Gem
-      "##  ---             ---  ##", // 50
-      "##                       ##", // 51
-      "##         ^^^^^         ##", // 52
-      "##        =======        ##", // 53
-      "##   T                   ##", // 54 Trampoline
-      "##  ===           ===    ##", // 55
-      "##                 O     ##", // 56 Orc guard
-      "##              =======  ##", // 57
-      "##          S            ##", // 58
-      "##        -----          ##", // 59
-      "##                       ##", // 60
-      "##                  ===  ##", // 61
-      "##   S                   ##", // 62 Slime
-      "##  ===                  ##", // 63
-      "##          T            ##", // 64
-      "##         ===           ##", // 65 Solid block for trampoline
-      "##                       ##", // 66
-      "##    @                  ##", // 67 Player spawn
+      "##                  ===  ##", // 36
+      "##                ====== ##", // 37 Stone platform (Orc Guard)
+      "##         2             ##", // 38 Vertical elevator
+      "##                       ##", // 39
+      "##   ======              ##", // 40 Stone ledge (Basic Slime)
+      "##           $$$         ##", // 41 Gold coins
+      "##                       ##", // 42
+      "##   ^^^^^               ##", // 43 Spikes
+      "##===   =================##", // 44 Tier 2 floor
+      "##                       ##", // 45
+      "##          ---          ##", // 46 Wood platform (Skeleton)
+      "##       =======         ##", // 47
+      "##    G                  ##", // 48 Gem
+      "##  ---             ---  ##", // 49 Side platforms
+      "##                       ##", // 50
+      "##         ^^^^^         ##", // 51 Spikes
+      "##        =======        ##", // 52 Stone platform (Orc Guard)
+      "##   T                   ##", // 53 Trampoline
+      "##  ===           ===    ##", // 54
+      "##                 ---   ##", // 55 Wooden beam (Basic Slime)
+      "##              =======  ##", // 56
+      "##                       ##", // 57
+      "##        -----          ##", // 58 Wood platform (Slime)
+      "##                       ##", // 59
+      "##                  ===  ##", // 60 Stone step
+      "##                       ##", // 61
+      "##  ===                  ##", // 62 Stone step (Skeleton)
+      "##          T            ##", // 63 Trampoline
+      "##         ===           ##", // 64 Solid block
+      "##                       ##", // 65
+      "##    @                  ##", // 66 Player spawn
+      "##                       ##", // 67
       "##=======================##", // 68 Base floor
       "###########################"  // 69 Solid bedrock
     ];
 
     let player = null;
-    let demonBoss = null;
-    let bossBar = null;
-    let bossBattleTriggered = false;
-
     const movingPlatforms = [];
     const enemies = [];
 
@@ -273,8 +288,20 @@ export function initLevel3(k) {
               ]);
               break;
 
+            case "D":
+              // Throne Gateway Door (Leads to Boss Arena)
+              k.add([
+                k.sprite("door_closed"),
+                k.pos(x, y),
+                k.scale(tileSize / 16),
+                k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
+                k.z(4),
+                "exit_door"
+              ]);
+              break;
+
             case "1":
-              // Moving Platform 1 (Horizontal patrol across row 33: x = 168 to 432, 2 tiles wide)
+              // Moving Platform 1 (Horizontal patrol across row 30: x = 168 to 432)
               {
                 const plat = k.add([
                   k.sprite("dungeon_platform_2x"),
@@ -300,7 +327,7 @@ export function initLevel3(k) {
               break;
 
             case "2":
-              // Moving Elevator 2 (Vertical ascent: y = 912 to 1056, 2 tiles wide)
+              // Moving Elevator 2 (Vertical ascent: y = 888 to 1032)
               {
                 const elevator = k.add([
                   k.sprite("dungeon_platform_2x"),
@@ -313,8 +340,8 @@ export function initLevel3(k) {
                   "platform",
                   "moving_platform",
                   {
-                    startY: 912,
-                    endY: 1056,
+                    startY: 888,
+                    endY: 1032,
                     speed: 48,
                     dir: -1,
                     deltaX: 0,
@@ -361,8 +388,6 @@ export function initLevel3(k) {
     });
 
     // Consolidated Static Physics Colliders:
-    // Replaces 496 individual tile collision bodies with 37 seamless bodies!
-
     // 1. Continuous Left Tower Wall Boundary (cols 0-1: x = 0..48)
     k.add([
       k.rect(48, mapHeight),
@@ -395,7 +420,7 @@ export function initLevel3(k) {
       "solid"
     ]);
 
-    // 4. Consolidated Ground Colliders (Continuous seamless rectangles for all '=' segments)
+    // 4. Consolidated Ground Colliders
     for (const seg of groundSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -408,7 +433,7 @@ export function initLevel3(k) {
       ]);
     }
 
-    // 5. Consolidated Platform Colliders (Continuous seamless rectangles for all '-' segments)
+    // 5. Consolidated Platform Colliders
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -421,30 +446,51 @@ export function initLevel3(k) {
       ]);
     }
 
-    // Initialize HUD
-    const hud = createHUD(k, "NIVEL 3: LA TORRE");
+    // Animated glowing label above Throne Gate Door
+    const throneDoorLabel = k.add([
+      k.text("PUERTA AL TRONO", { font: "pressstart", size: 7 }),
+      k.pos(13 * tileSize + 12, 1 * tileSize - 8),
+      k.anchor("center"),
+      k.color(255, 140, 140),
+      k.z(10)
+    ]);
+    throneDoorLabel.onUpdate(() => {
+      throneDoorLabel.opacity = k.wave(0.5, 1, k.time() * 4);
+    });
 
-    // Spawn player at "@" position (flush on base floor)
+    // Initialize HUD
+    createHUD(k, "NIVEL 3: LA TORRE");
+
+    // Spawn player at "@" position (row 66, flush on base floor at y = 1618)
     player = createPlayer(k, 120, 1618, true, 1760);
 
-    // Spawn tower guards (flush on platform surfaces, zero clipping)
-    enemies.push(createSlime(k, 5 * tileSize, 1500, 24));
-    enemies.push(createOrc(k, 19 * tileSize, 1357, 36));
-    enemies.push(createSlime(k, 12 * tileSize, 1140, 32));
-    enemies.push(createOrc(k, 20 * tileSize, 901, 36));
-    enemies.push(createOrc(k, 13 * tileSize, 565, 36));
+    // =========================================================================
+    // Spawn Expanded Enemy Roster across the 5 Tiers of the Tower
+    // =========================================================================
 
-    // Spawn Demon King at row 6, col 13 (flush on throne arena platform at y=168)
-    demonBoss = createDemon(k, 312, 152, null, () => {
-      // Callback on boss defeat -> Check if Easter Egg secret level is unlocked!
-      k.wait(1.5, () => {
-        if (gameState.score >= gameState.secretScoreThreshold) {
-          k.go("secret");
-        } else {
-          k.go("victory");
-        }
-      });
-    });
+    // Tier 1 (Base & Lower Ascent: rows 55-66)
+    enemies.push(createSkeleton(k, 4 * tileSize, 1475, 24));      // Row 62 stone step
+    enemies.push(createSlime(k, 12 * tileSize, 1378, 30));         // Row 58 wood platform
+    enemies.push(createBasicSlime(k, 20 * tileSize, 1307, 24));    // Row 55 wooden beam
+
+    // Tier 2 (Mid-Lower Ramparts: rows 44-54)
+    enemies.push(createOrc(k, 12 * tileSize, 1235, 36));          // Row 52 stone platform
+    enemies.push(createSkeleton(k, 12 * tileSize, 1090, 28));     // Row 46 wood platform
+    enemies.push(createBasicSlime(k, 6 * tileSize, 946, 36));      // Row 40 stone ledge
+
+    // Tier 3 (Middle Fortress & Chasm: rows 30-43)
+    enemies.push(createOrc(k, 19 * tileSize, 874, 36));           // Row 37 stone platform
+    enemies.push(createSkeleton(k, 20 * tileSize, 755, 24));      // Row 32 platform
+
+    // Tier 4 (Upper Gate & Spike Hall: rows 13-29)
+    enemies.push(createOrc(k, 13 * tileSize, 538, 36));           // Row 23 stone floor
+    enemies.push(createBasicSlime(k, 12 * tileSize, 467, 30));     // Row 20 wooden bridge
+    enemies.push(createSkeleton(k, 12 * tileSize, 370, 32));      // Row 16 stone floor
+
+    // Tier 5 (Summit Citadel / Throne Gate Guards: rows 4-9)
+    enemies.push(createSkeleton(k, 7 * tileSize, 130, 36));       // Row 6 Summit Citadel guard (left)
+    enemies.push(createSkeleton(k, 18 * tileSize, 130, 36));      // Row 6 Summit Citadel guard (right)
+    enemies.push(createSlime(k, 12 * tileSize, 202, 24));         // Row 9 center stepping ledge
 
     // Update moving platforms with player drag physics
     k.onUpdate(() => {
@@ -527,7 +573,8 @@ export function initLevel3(k) {
     // 2. Geyser Trampolines (Super jump)
     player.onCollide("spring", (spr) => {
       k.play("spring");
-      player.jump(590);
+      player.jump(player.jumpForce * 1.45);
+      player.hasDoubleJumped = false;
       spr.scale = k.vec2((tileSize / 16) * 1.3, (tileSize / 16) * 0.7);
       k.wait(0.15, () => {
         spr.scale = k.vec2(tileSize / 16, tileSize / 16);
@@ -539,7 +586,7 @@ export function initLevel3(k) {
       player.receiveDamage(0);
     });
 
-    // 4. Combat collisions with enemies and boss
+    // 4. Combat collisions with enemies
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || enemy.isHurt) return;
 
@@ -549,10 +596,7 @@ export function initLevel3(k) {
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
 
       if (isStomping) {
-        if (enemy.is("demon")) {
-          // Boss: Demon King takes 1 damage from aerial stomp
-          enemy.takeDamage(1, player.pos.x);
-        } else if (enemy.is("orc")) {
+        if (enemy.is("orc") || enemy.is("skeleton")) {
           enemy.takeDamage(2, player.pos.x);
         } else {
           enemy.die();
@@ -574,18 +618,56 @@ export function initLevel3(k) {
       player.receiveDamage(knockDir);
     });
 
-    player.onCollide("demon_attack", (hitbox) => {
+    player.onCollide("skeleton_attack", (hitbox) => {
       if (player.isHurt || player.isDead) return;
       const knockDir = player.pos.x < hitbox.pos.x ? -1 : 1;
       player.receiveDamage(knockDir);
     });
 
-    // Sword melee attack hitting demon boss
-    player.onCollide("player_attack", (hitbox) => {
-      // handled inside player attack system
+    // 5. Level Exit Door Transition: Enters the Throne Room ("throne")
+    let enteringThrone = false;
+    player.onCollide("exit_door", (door) => {
+      if (enteringThrone) return;
+      enteringThrone = true;
+
+      door.use(k.sprite("door_open"));
+      k.play("win");
+
+      // Grand Portal Transition Banner
+      k.add([
+        k.rect(500, 60),
+        k.pos(k.width() / 2, k.height() / 2),
+        k.anchor("center"),
+        k.color(24, 8, 20),
+        k.opacity(0.92),
+        k.fixed(),
+        k.z(150)
+      ]);
+
+      k.add([
+        k.text("¡ENTRANDO A LA SALA DEL TRONO...!", { font: "pressstart", size: 9 }),
+        k.pos(k.width() / 2, k.height() / 2 - 8),
+        k.anchor("center"),
+        k.color(255, 120, 120),
+        k.fixed(),
+        k.z(151)
+      ]);
+
+      k.add([
+        k.text("El Rey Demonio te espera...", { font: "pressstart", size: 7.5 }),
+        k.pos(k.width() / 2, k.height() / 2 + 12),
+        k.anchor("center"),
+        k.color(240, 200, 200),
+        k.fixed(),
+        k.z(151)
+      ]);
+
+      k.wait(2.0, () => {
+        k.go("throne");
+      });
     });
 
-    // --- Main Update Loop: Vertical Camera Tracking & Boss Arena Trigger ---
+    // --- Main Update Loop: Vertical Camera Tracking & Clamp ---
     k.onUpdate(() => {
       if (!player) return;
 
@@ -604,34 +686,6 @@ export function initLevel3(k) {
       // Vertical Camera Tracking: Locks horizontally at width/2 and smoothly follows Mili in Y
       const targetCamY = Math.max(k.height() / 2, Math.min(player.pos.y, mapHeight - k.height() / 2));
       k.camPos(k.width() / 2, targetCamY);
-
-      // Trigger Boss Fight Arena when player reaches the rooftop throne (y < 260)
-      if (player.pos.y < 260 && !bossBattleTriggered) {
-        bossBattleTriggered = true;
-        k.play("win");
-
-        // Spawn Boss Health Bar in the HUD
-        bossBar = hud.createBossBar("REY DEMONIO", 10);
-
-        // Assign bossBar to demon instance
-        if (demonBoss) {
-          demonBoss.bossBar = bossBar;
-        }
-
-        // Rooftop entrance banner
-        const arenaBanner = k.add([
-          k.text("¡EL TRONO DEL REY DEMONIO!", {
-            font: "pressstart",
-            size: 9
-          }),
-          k.pos(k.width() / 2, 75),
-          k.anchor("center"),
-          k.color(255, 60, 60),
-          k.fixed(),
-          k.z(100)
-        ]);
-        k.wait(3.0, () => arenaBanner.destroy());
-      }
     });
   });
 }

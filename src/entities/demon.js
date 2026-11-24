@@ -200,6 +200,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         }
 
         this.play("death");
+        this.collisionIgnore = ["*"];
         k.shake(14);
         k.play("win");
         gameState.addScore(2500);
