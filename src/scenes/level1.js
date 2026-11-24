@@ -75,6 +75,12 @@ export function initLevel1(k) {
       "====================      =================================================="
     ];
 
+    const tileSize = 24;
+    const cols = mapLayout[0].length; // 76
+    const rows = mapLayout.length;    // 15
+    const mapWidth = cols * tileSize;  // 1824 px
+    const mapHeight = rows * tileSize; // 360 px
+
     let player = null;
     const slimes = [];
 
@@ -93,98 +99,194 @@ export function initLevel1(k) {
       k.wait(0.5, () => popup.destroy());
     }
 
-    // Build the level using Kaboom's addLevel
-    const level = k.addLevel(mapLayout, {
-      tileWidth: 24,
-      tileHeight: 24,
-      pos: k.vec2(0, 0),
-      tiles: {
-        // RottingPixels Castle Stone Top
-        "=": () => [
-          k.sprite("stone_top"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid",
-          "ground"
-        ],
-        // RottingPixels Castle Wall Fill
-        "#": () => [
-          k.sprite("stone_wall"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid"
-        ],
-        // RottingPixels Medieval Wooden Platform
-        "-": () => [
-          k.sprite("wood_platform"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid",
-          "platform"
-        ],
-        // Coin (+100 points)
-        "$": () => [
-          k.sprite("coin"),
-          k.scale(24 / 18),
-          k.area(),
-          k.anchor("center"),
-          k.z(2),
-          "coin"
-        ],
-        // Gem (+250 points)
-        "G": () => [
-          k.sprite("gem"),
-          k.scale(24 / 18),
-          k.area(),
-          k.anchor("center"),
-          k.z(2),
-          "gem"
-        ],
-        // RottingPixels Castle Spikes (precise player-favorable hazard hitbox)
-        "^": () => [
-          k.sprite("castle_spikes"),
-          k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
-          k.z(2),
-          "hazard",
-          "spikes"
-        ],
-        // Castle Background Decoration: Flower Vase
-        "V": () => [
-          k.sprite("flower_vase"),
-          k.scale(24 / 16),
-          k.z(1),
-          "decoration"
-        ],
-        // Trampoline / Spring mechanic
-        "T": () => [
-          k.sprite("spring"),
-          k.scale(24 / 18),
-          k.area(),
-          k.z(2),
-          "spring"
-        ],
-        // Level exit door (Authentic medieval arched wooden door, 16x32)
-        "D": () => [
-          k.sprite("door_closed"),
-          k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
-          k.z(2),
-          "exit_door"
-        ]
+    // Pre-calculate visual tiles grouped by column for zero-allocation horizontal frustum culling
+    const visualCols = Array.from({ length: cols }, () => []);
+    const groundSegments = [];
+    const wallSegments = [];
+    const platformSegments = [];
+
+    // Parse the map layout
+    for (let row = 0; row < rows; row++) {
+      const line = mapLayout[row];
+      let col = 0;
+
+      while (col < cols) {
+        const char = line[col];
+        const x = col * tileSize;
+        const y = row * tileSize;
+
+        if (char === "=") {
+          const startCol = col;
+          while (col < cols && line[col] === "=") {
+            visualCols[col].push({ sprite: "stone_top", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          groundSegments.push({ row, col: startCol, len: length });
+        } else if (char === "#") {
+          const startCol = col;
+          while (col < cols && line[col] === "#") {
+            visualCols[col].push({ sprite: "stone_wall", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          wallSegments.push({ row, col: startCol, len: length });
+        } else if (char === "-") {
+          const startCol = col;
+          while (col < cols && line[col] === "-") {
+            visualCols[col].push({ sprite: "wood_platform", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          platformSegments.push({ row, col: startCol, len: length });
+        } else if (char === "V") {
+          // Decorative flower vase
+          visualCols[col].push({ sprite: "flower_vase", pos: k.vec2(x, y) });
+          col++;
+        } else {
+          // Interactive objects
+          switch (char) {
+            case "$":
+              // Coin (+100 points)
+              k.add([
+                k.sprite("coin"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 18),
+                k.area(),
+                k.anchor("center"),
+                k.z(2),
+                "coin"
+              ]);
+              break;
+
+            case "G":
+              // Gem (+250 points)
+              k.add([
+                k.sprite("gem"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 18),
+                k.area(),
+                k.anchor("center"),
+                k.z(2),
+                "gem"
+              ]);
+              break;
+
+            case "^":
+              // Castle iron spikes (precise player-favorable hazard hitbox)
+              k.add([
+                k.sprite("castle_spikes"),
+                k.pos(x, y),
+                k.scale(24 / 16),
+                k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
+                k.z(2),
+                "hazard",
+                "spikes"
+              ]);
+              break;
+
+            case "T":
+              // Trampoline / Spring mechanic
+              k.add([
+                k.sprite("spring"),
+                k.pos(x, y),
+                k.scale(24 / 18),
+                k.area(),
+                k.z(2),
+                "spring"
+              ]);
+              break;
+
+            case "D":
+              // Level exit door (Authentic medieval arched wooden door, 16x32)
+              k.add([
+                k.sprite("door_closed"),
+                k.pos(x, y),
+                k.scale(24 / 16),
+                k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
+                k.z(2),
+                "exit_door"
+              ]);
+              break;
+
+            default:
+              break;
+          }
+          col++;
+        }
+      }
+    }
+
+    // Dedicated frustum-culled tilemap renderer:
+    // Only draws columns visible within horizontal viewport (+48px padding)
+    // Zero WebGL draw calls for off-screen tiles!
+    const tilemap = k.add([
+      k.z(1)
+    ]);
+    const tileScale = k.vec2(24 / 16, 24 / 16);
+
+    tilemap.onDraw(() => {
+      const camX = k.camPos().x;
+      const minCol = Math.max(0, Math.floor((camX - 368) / tileSize));
+      const maxCol = Math.min(cols - 1, Math.ceil((camX + 368) / tileSize));
+
+      for (let c = minCol; c <= maxCol; c++) {
+        const colTiles = visualCols[c];
+        for (let i = 0; i < colTiles.length; i++) {
+          const t = colTiles[i];
+          k.drawSprite({
+            sprite: t.sprite,
+            pos: t.pos,
+            scale: tileScale
+          });
+        }
       }
     });
 
+    // Consolidated Static Physics Colliders:
+    // Replaces 154 individual tile bodies with 24 seamless bodies!
+
+    // 1. Consolidated Ground Colliders (Continuous seamless rectangles for all '=' segments)
+    for (const seg of groundSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "ground"
+      ]);
+    }
+
+    // 2. Consolidated Wall Colliders (Continuous seamless rectangles for all '#' segments)
+    for (const seg of wallSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "wall"
+      ]);
+    }
+
+    // 3. Consolidated Platform Colliders (Continuous seamless rectangles for all '-' segments)
+    for (const seg of platformSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "platform"
+      ]);
+    }
+
     // --- Map Boundaries (Req-5) ---
     // Prevent player and enemies from falling off the start (left) or end (right) of the map
-    const mapWidth = mapLayout[0].length * 24; // 76 * 24 = 1824 px
-    const mapHeight = mapLayout.length * 24; // 15 * 24 = 360 px
 
     // Left solid boundary (x <= 0)
     k.add([
@@ -222,6 +324,7 @@ export function initLevel1(k) {
       k.pos(624, 360),
       k.area(),
       k.body({ isStatic: true }),
+      k.opacity(0),
       "solid"
     ]);
 
