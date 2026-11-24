@@ -379,7 +379,7 @@ export function initLevel2(k) {
       "solid",
       "platform",
       "moving_platform",
-      { baseX: 18 * 24, deltaX: 0 }
+      { baseX: 18 * 24, deltaX: 0, width: 24, height: 24 }
     ]);
     plat1.onUpdate(() => {
       const prevX = plat1.pos.x;
@@ -400,7 +400,7 @@ export function initLevel2(k) {
       "solid",
       "platform",
       "moving_platform",
-      { baseY: 9 * 24, deltaY: 0 }
+      { baseY: 9 * 24, deltaY: 0, width: 24, height: 24 }
     ]);
     plat2.onUpdate(() => {
       const prevY = plat2.pos.y;
@@ -421,7 +421,7 @@ export function initLevel2(k) {
       "solid",
       "platform",
       "moving_platform",
-      { baseX: 73 * 24, deltaX: 0 }
+      { baseX: 73 * 24, deltaX: 0, width: 24, height: 24 }
     ]);
     plat3.onUpdate(() => {
       const prevX = plat3.pos.x;
@@ -437,7 +437,7 @@ export function initLevel2(k) {
       const isStanding =
         player.pos.x + 8 > plat.pos.x &&
         player.pos.x - 8 < plat.pos.x + 24 &&
-        Math.abs((player.pos.y + 12) - plat.pos.y) < 6;
+        Math.abs((player.pos.y + 13.7) - plat.pos.y) < 6;
 
       if (isStanding) {
         player.pos.x += plat.deltaX;
@@ -449,7 +449,7 @@ export function initLevel2(k) {
       const isStanding =
         player.pos.x + 8 > plat.pos.x &&
         player.pos.x - 8 < plat.pos.x + 24 &&
-        Math.abs((player.pos.y + 12) - plat.pos.y) < 6;
+        Math.abs((player.pos.y + 13.7) - plat.pos.y) < 6;
 
       if (isStanding) {
         player.pos.y += plat.deltaY;

@@ -43,6 +43,8 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       isDead: false,
       invulnerable: false,
       facing: "right",
+      prevBottom: y + 13.7,
+      prevY: y,
 
       // Fatal death: Instant kill from bottomless pit or 0 lives
       die() {
@@ -240,6 +242,10 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       if (player.vel.y < -590) player.vel.y = -590;
     }
 
+    // Record position before physics moves the player this frame
+    player.prevBottom = player.pos.y + 13.7;
+    player.prevY = player.pos.y;
+
     // Safety 2: Bottomless pit death threshold
     // Level 1, 2, Dungeons & Secret have map height 360 (pit death at y > 420, well off-screen).
     // Level 3 (Tower) has map height 1680 (pit death at y > 1760).
@@ -322,7 +328,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
 
     const isPlatform = col.target.is("platform");
     const targetLeft = col.target.pos.x;
-    const targetWidth = col.target.width ?? 24;
+    const targetWidth = col.target.width ?? (col.target.area?.shape?.width ? col.target.area.shape.width * (col.target.scale?.x ?? 1) : 24);
     const targetRight = targetLeft + targetWidth;
     const targetTop = col.target.pos.y;
     const targetHeight = col.target.height ?? 24;
@@ -335,19 +341,55 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
 
     // Horizontal overlap between player's body and the target block
     const overlapX = Math.min(playerRight, targetRight) - Math.max(playerLeft, targetLeft);
-    // Mili is genuinely over the block (at least 4px of horizontal body overlap)
     const isHorizontallyOver = overlapX >= 4;
 
     // =========================================================================
-    // 1. ASCENDING (UPWARD VELOCITY): player.vel.y < 0
+    // 1. ONE-WAY FLOATING PLATFORMS (isPlatform === true)
     // =========================================================================
-    if (player.vel && player.vel.y < 0) {
-      // ONE-WAY FLOATING PLATFORMS: Jump through freely from below!
-      if (isPlatform) {
+    if (isPlatform) {
+      // Ascending (jumping upward): freely jump through all platforms from below
+      if (player.vel && player.vel.y < 0) {
         col.preventResolution();
         return;
       }
 
+      // Descending or standing (vel.y >= 0):
+      // Check whether the player approached from ABOVE the platform.
+      // player.prevBottom is the position of Mili's boots before this frame's physics step.
+      // If prevBottom was already below the platform surface (> targetTop + 6),
+      // or if Mili's feet are completely off the platform (overlapX <= 0):
+      // player is moving up/falling from below -> pass through!
+      const prevBottom = player.prevBottom ?? playerBottom;
+      if (prevBottom > targetTop + 6 || overlapX <= 0) {
+        col.preventResolution();
+        return;
+      }
+
+      // Player landed on the platform from above!
+      // 1. Zero out downward velocity so player doesn't continue falling
+      if (player.vel && player.vel.y > 0) {
+        player.vel.y = 0;
+      }
+
+      // 2. Eliminate any horizontal displacement:
+      // One-way platforms NEVER push players sideways (fixes corner-ejection bug)!
+      col.displacement.x = 0;
+
+      // 3. Force vertical displacement upward to snap boots flush on the top surface
+      const penetrationY = playerBottom - targetTop;
+      if (penetrationY > 0) {
+        col.displacement.y = -penetrationY;
+      } else if (col.displacement.y >= 0) {
+        col.displacement.y = -0.1;
+      }
+      return;
+    }
+
+    // =========================================================================
+    // 2. SOLID TERRAIN (WALLS, FLOORS, CEILINGS)
+    // =========================================================================
+    // ASCENDING (UPWARD VELOCITY): player.vel.y < 0
+    if (player.vel && player.vel.y < 0) {
       // SOLID CEILING BLOCKS:
       // Only trigger ceiling collision if player is actually UNDER the block horizontally
       // and hitting the underside of the block with their head
@@ -362,24 +404,16 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       }
 
       // If grazing the SIDE of a wall while jumping upward:
-      // It's a wall collision! Allow normal lateral resolution (push player away horizontally)
+      // Allow normal lateral resolution (push player away horizontally)
       // and do NOT kill upward velocity or push vertically!
       return;
     }
 
-    // =========================================================================
-    // 2. DESCENDING OR GROUNDED (DOWNWARD / ZERO VELOCITY): player.vel.y >= 0
-    // =========================================================================
+    // DESCENDING OR GROUNDED (DOWNWARD / ZERO VELOCITY): player.vel.y >= 0
     if (!player.vel || player.vel.y >= 0) {
-      // ONE-WAY PLATFORMS: If falling but feet are below the platform top surface
-      if (isPlatform && (playerBottom > targetTop + 8 || !isHorizontallyOver)) {
-        col.preventResolution();
-        return;
-      }
-
       const penetrationY = playerBottom - targetTop;
 
-      // Contact with the top surface of a floor block or platform:
+      // Contact with the top surface of a floor block:
       // 1. Player is horizontally over the block (overlapX >= 4)
       // 2. Player's feet are contacting the top surface (penetrationY between -2 and 14)
       // 3. Collision resolution is predominantly vertical (landing) or boots are at the surface
