@@ -96,6 +96,12 @@ export function initLevel2(k) {
       "=================                =============   ==============       ========             ============================="
     ];
 
+    const tileSize = 24;
+    const cols = mapLayout[0].length; // 120
+    const rows = mapLayout.length;    // 15
+    const mapWidth = cols * tileSize;  // 2880 px
+    const mapHeight = rows * tileSize; // 360 px
+
     let player = null;
     const enemies = [];
     const movingPlatforms = [];
@@ -115,120 +121,228 @@ export function initLevel2(k) {
       k.wait(0.6, () => popup.destroy());
     }
 
-    // Build the level using Kaboom's addLevel
-    const level = k.addLevel(mapLayout, {
-      tileWidth: 24,
-      tileHeight: 24,
-      pos: k.vec2(0, 0),
-      tiles: {
-        // RottingPixels Cave Stone Top (Starts at y=0, perfectly flush)
-        "=": () => [
-          k.sprite("cave_top"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid",
-          "ground"
-        ],
-        // RottingPixels Cave Wall Fill
-        "#": () => [
-          k.sprite("cave_wall"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid"
-        ],
-        // Mining timber platform
-        "-": () => [
-          k.sprite("wood_platform"),
-          k.scale(24 / 16),
-          k.area(),
-          k.body({ isStatic: true }),
-          k.z(1),
-          "solid",
-          "platform"
-        ],
-        // Gold Coin (+100 points)
-        "$": () => [
-          k.sprite("coin"),
-          k.scale(24 / 18),
-          k.area(),
-          k.anchor("center"),
-          k.z(2),
-          "coin"
-        ],
-        // Crystal Gem (+250 points)
-        "G": () => [
-          k.sprite("gem"),
-          k.scale(24 / 18),
-          k.area(),
-          k.anchor("center"),
-          k.z(2),
-          "gem"
-        ],
-        // Mineral Stalagmites Hazard (precise player-favorable hazard hitbox)
-        "^": () => [
-          k.sprite("cave_spikes"),
-          k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
-          k.z(2),
-          "spikes",
-          "hazard"
-        ],
-        // Geyser / Bouncy Spring Trampoline
-        "T": () => [
-          k.sprite("spring"),
-          k.scale(24 / 18),
-          k.area(),
-          k.z(2),
-          "spring"
-        ],
-        // 1: Grimorio Carmesí (Falso -> Cripta de Fuego)
-        "1": () => [
-          k.sprite("book_red"),
-          k.scale(24 / 16),
-          k.area(),
-          k.anchor("center"),
-          k.z(3),
-          "book_red",
-          "book"
-        ],
-        // 2: Grimorio Esmeralda (Falso -> Garganta Tóxica)
-        "2": () => [
-          k.sprite("book_green"),
-          k.scale(24 / 16),
-          k.area(),
-          k.anchor("center"),
-          k.z(3),
-          "book_green",
-          "book"
-        ],
-        // 3: Grimorio Celestial (Verdadero -> Trono del Rey Demonio)
-        "3": () => [
-          k.sprite("book_blue"),
-          k.scale(24 / 16),
-          k.area(),
-          k.anchor("center"),
-          k.z(3),
-          "book_blue",
-          "book"
-        ],
-        // Locked Exit Door (16x32, 2 tiles tall)
-        "D": () => [
-          k.sprite("door_closed"),
-          k.scale(24 / 16),
-          k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
-          k.z(2),
-          "exit_door"
-        ]
+    // Pre-calculate visual tiles grouped by column for zero-allocation horizontal frustum culling
+    const visualCols = Array.from({ length: cols }, () => []);
+    const groundSegments = [];
+    const wallSegments = [];
+    const platformSegments = [];
+
+    // Parse the map layout
+    for (let row = 0; row < rows; row++) {
+      const line = mapLayout[row];
+      let col = 0;
+
+      while (col < cols) {
+        const char = line[col];
+        const x = col * tileSize;
+        const y = row * tileSize;
+
+        if (char === "=") {
+          const startCol = col;
+          while (col < cols && line[col] === "=") {
+            visualCols[col].push({ sprite: "cave_top", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          groundSegments.push({ row, col: startCol, len: length });
+        } else if (char === "#") {
+          const startCol = col;
+          while (col < cols && line[col] === "#") {
+            visualCols[col].push({ sprite: "cave_wall", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          wallSegments.push({ row, col: startCol, len: length });
+        } else if (char === "-") {
+          const startCol = col;
+          while (col < cols && line[col] === "-") {
+            visualCols[col].push({ sprite: "wood_platform", pos: k.vec2(col * tileSize, y) });
+            col++;
+          }
+          const length = col - startCol;
+          platformSegments.push({ row, col: startCol, len: length });
+        } else {
+          switch (char) {
+            case "$":
+              // Gold Coin (+100 points)
+              k.add([
+                k.sprite("coin"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 18),
+                k.area(),
+                k.anchor("center"),
+                k.z(2),
+                "coin"
+              ]);
+              break;
+
+            case "G":
+              // Crystal Gem (+250 points)
+              k.add([
+                k.sprite("gem"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 18),
+                k.area(),
+                k.anchor("center"),
+                k.z(2),
+                "gem"
+              ]);
+              break;
+
+            case "^":
+              // Mineral Stalagmites Hazard (precise player-favorable hazard hitbox)
+              k.add([
+                k.sprite("cave_spikes"),
+                k.pos(x, y),
+                k.scale(24 / 16),
+                k.area({ shape: new k.Rect(k.vec2(2, 10), 12, 6) }),
+                k.z(2),
+                "spikes",
+                "hazard"
+              ]);
+              break;
+
+            case "T":
+              // Geyser / Bouncy Spring Trampoline
+              k.add([
+                k.sprite("spring"),
+                k.pos(x, y),
+                k.scale(24 / 18),
+                k.area(),
+                k.z(2),
+                "spring"
+              ]);
+              break;
+
+            case "1":
+              // 1: Grimorio Carmesí (Falso -> Cripta de Fuego)
+              k.add([
+                k.sprite("book_red"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 16),
+                k.area(),
+                k.anchor("center"),
+                k.z(3),
+                "book_red",
+                "book"
+              ]);
+              break;
+
+            case "2":
+              // 2: Grimorio Esmeralda (Falso -> Garganta Tóxica)
+              k.add([
+                k.sprite("book_green"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 16),
+                k.area(),
+                k.anchor("center"),
+                k.z(3),
+                "book_green",
+                "book"
+              ]);
+              break;
+
+            case "3":
+              // 3: Grimorio Celestial (Verdadero -> Trono del Rey Demonio)
+              k.add([
+                k.sprite("book_blue"),
+                k.pos(x + 12, y + 12),
+                k.scale(24 / 16),
+                k.area(),
+                k.anchor("center"),
+                k.z(3),
+                "book_blue",
+                "book"
+              ]);
+              break;
+
+            case "D":
+              // Locked Exit Door (16x32, 2 tiles tall)
+              k.add([
+                k.sprite("door_closed"),
+                k.pos(x, y),
+                k.scale(24 / 16),
+                k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
+                k.z(2),
+                "exit_door"
+              ]);
+              break;
+
+            default:
+              break;
+          }
+          col++;
+        }
+      }
+    }
+
+    // Dedicated frustum-culled tilemap renderer:
+    // Only draws columns visible within horizontal viewport (+48px padding)
+    // Zero WebGL draw calls for off-screen tiles!
+    const tilemap = k.add([
+      k.z(1)
+    ]);
+    const tileScale = k.vec2(24 / 16, 24 / 16);
+
+    tilemap.onDraw(() => {
+      const camX = k.camPos().x;
+      const minCol = Math.max(0, Math.floor((camX - 368) / tileSize));
+      const maxCol = Math.min(cols - 1, Math.ceil((camX + 368) / tileSize));
+
+      for (let c = minCol; c <= maxCol; c++) {
+        const colTiles = visualCols[c];
+        for (let i = 0; i < colTiles.length; i++) {
+          const t = colTiles[i];
+          k.drawSprite({
+            sprite: t.sprite,
+            pos: t.pos,
+            scale: tileScale
+          });
+        }
       }
     });
 
-    // Map dimensions (120 cols x 15 rows)
-    const mapWidth = 120 * 24; // 2880 px
-    const mapHeight = 15 * 24; // 360 px
+    // Consolidated Static Physics Colliders:
+    // Replaces 188 individual tile bodies with 31 seamless bodies!
+
+    // 1. Consolidated Ground Colliders (Continuous seamless rectangles for all '=' segments)
+    for (const seg of groundSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "ground"
+      ]);
+    }
+
+    // 2. Consolidated Wall Colliders (Continuous seamless rectangles for all '#' segments)
+    for (const seg of wallSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "wall"
+      ]);
+    }
+
+    // 3. Consolidated Platform Colliders (Continuous seamless rectangles for all '-' segments)
+    for (const seg of platformSegments) {
+      k.add([
+        k.rect(seg.len * tileSize, tileSize),
+        k.pos(seg.col * tileSize, seg.row * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        "solid",
+        "platform"
+      ]);
+    }
 
     // Left solid boundary
     k.add([
@@ -317,15 +431,13 @@ export function initLevel2(k) {
     });
     movingPlatforms.push(plat3);
 
-    // Helper: Carries player when standing on moving platform
+    // Helper: Carries player when standing on moving platform (fast zero-allocation check)
     function carryPlayerHorizontal(plat) {
       if (!player || !player.isGrounded()) return;
-      const pBounds = player.worldArea().bbox();
-      const platBounds = plat.worldArea().bbox();
       const isStanding =
-        pBounds.pos.x + pBounds.width > platBounds.pos.x &&
-        pBounds.pos.x < platBounds.pos.x + platBounds.width &&
-        Math.abs(pBounds.pos.y + pBounds.height - platBounds.pos.y) < 5;
+        player.pos.x + 8 > plat.pos.x &&
+        player.pos.x - 8 < plat.pos.x + 24 &&
+        Math.abs((player.pos.y + 12) - plat.pos.y) < 6;
 
       if (isStanding) {
         player.pos.x += plat.deltaX;
@@ -334,12 +446,10 @@ export function initLevel2(k) {
 
     function carryPlayerVertical(plat) {
       if (!player || !player.isGrounded()) return;
-      const pBounds = player.worldArea().bbox();
-      const platBounds = plat.worldArea().bbox();
       const isStanding =
-        pBounds.pos.x + pBounds.width > platBounds.pos.x &&
-        pBounds.pos.x < platBounds.pos.x + platBounds.width &&
-        Math.abs(pBounds.pos.y + pBounds.height - platBounds.pos.y) < 6;
+        player.pos.x + 8 > plat.pos.x &&
+        player.pos.x - 8 < plat.pos.x + 24 &&
+        Math.abs((player.pos.y + 12) - plat.pos.y) < 6;
 
       if (isStanding) {
         player.pos.y += plat.deltaY;
