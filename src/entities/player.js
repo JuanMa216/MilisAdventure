@@ -308,23 +308,35 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
-  // --- Ceiling & Floor Internal Seam Glitch Prevention ---
-  // Collision seam, platform, and trampoline physics handling:
-  // 1. ONE-WAY PLATFORMS: Mili can jump up freely through thin floating platforms from below,
-  //    and lands firmly on top when falling onto them.
-  // 2. CEILING COLLISIONS: Halts upward momentum immediately and forces downward separation
-  //    so high-speed jumps (trampolines) can never phase up through solid ceiling blocks.
-  // 3. FLOOR & PLATFORM LANDINGS: Prevents SAT from pushing downward or sideways on high falls,
-  //    ensuring boots land solidly on top and Kaboom grounds the player.
+  // --- Physics Resolution & Collision Geometry Handling ---
+  // Fixes:
+  // 1. ONE-WAY FLOATING PLATFORMS: Jump through freely from below, land solidly from above.
+  // 2. CEILING HEADBUTTS: Halts upward velocity and forces downward separation only when
+  //    player is horizontally underneath the ceiling, preventing high-speed phase-through (trampolines).
+  // 3. WALLS & LATERAL EDGES: Preserves SAT horizontal displacement (displacement.x) when
+  //    touching side faces or corners, preventing "invisible ledges" or floating in mid-air.
+  // 4. FLOORS & PLATFORMS: Keeps boots flush and eliminates seam hitching when player is
+  //    genuinely horizontally positioned over the top surface.
   player.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
 
     const isPlatform = col.target.is("platform");
-    const tileTop = col.target.pos.y;
-    const tileHeight = col.target.height ?? 24;
-    const tileBottom = tileTop + tileHeight;
-    const playerBottom = player.pos.y + 13.71; // Bottom of boots
-    const playerTop = player.pos.y - 10.3; // Top of helmet
+    const targetLeft = col.target.pos.x;
+    const targetWidth = col.target.width ?? 24;
+    const targetRight = targetLeft + targetWidth;
+    const targetTop = col.target.pos.y;
+    const targetHeight = col.target.height ?? 24;
+    const targetBottom = targetTop + targetHeight;
+
+    const playerLeft = player.pos.x - 8;
+    const playerRight = player.pos.x + 8;
+    const playerTop = player.pos.y - 10.3;
+    const playerBottom = player.pos.y + 13.7;
+
+    // Horizontal overlap between player's body and the target block
+    const overlapX = Math.min(playerRight, targetRight) - Math.max(playerLeft, targetLeft);
+    // Mili is genuinely over the block (at least 4px of horizontal body overlap)
+    const isHorizontallyOver = overlapX >= 4;
 
     // =========================================================================
     // 1. ASCENDING (UPWARD VELOCITY): player.vel.y < 0
@@ -336,31 +348,45 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         return;
       }
 
-      // SOLID CEILING BLOCKS (walls, stone ground blocks, masonry):
-      // When moving upward and hitting any overhead solid obstacle:
-      if (col.target.pos.y < player.pos.y + 10) {
-        // Halt all upward momentum immediately
+      // SOLID CEILING BLOCKS:
+      // Only trigger ceiling collision if player is actually UNDER the block horizontally
+      // and hitting the underside of the block with their head
+      if (isHorizontallyOver && targetBottom <= player.pos.y + 6 && playerTop <= targetBottom + 4) {
+        // Halt upward momentum
         player.vel.y = 0;
-
-        // Force downward separation so Mili never pops through the ceiling
-        const penetrationY = tileBottom - playerTop;
+        // Separate downward
+        const penetrationY = targetBottom - playerTop;
         col.displacement.x = 0;
         col.displacement.y = Math.max(penetrationY, 1);
         return;
       }
+
+      // If grazing the SIDE of a wall while jumping upward:
+      // It's a wall collision! Allow normal lateral resolution (push player away horizontally)
+      // and do NOT kill upward velocity or push vertically!
+      return;
     }
 
     // =========================================================================
     // 2. DESCENDING OR GROUNDED (DOWNWARD / ZERO VELOCITY): player.vel.y >= 0
     // =========================================================================
     if (!player.vel || player.vel.y >= 0) {
-      const penetrationY = playerBottom - tileTop;
+      // ONE-WAY PLATFORMS: If falling but feet are below the platform top surface
+      if (isPlatform && (playerBottom > targetTop + 8 || !isHorizontallyOver)) {
+        col.preventResolution();
+        return;
+      }
+
+      const penetrationY = playerBottom - targetTop;
 
       // Contact with the top surface of a floor block or platform:
-      // Player center is above the tile top surface (player.pos.y < tileTop + 10)
-      // and boots are at or penetrating into the surface (penetrationY >= -2)
-      if (player.pos.y < tileTop + 10 && penetrationY >= -2) {
-        // Prevent SAT from kicking player sideways across seams
+      // 1. Player is horizontally over the block (overlapX >= 4)
+      // 2. Player's feet are contacting the top surface (penetrationY between -2 and 14)
+      // 3. Collision resolution is predominantly vertical (landing) or boots are at the surface
+      const isVerticalLanding = col.isBottom() || Math.abs(col.displacement.y) >= Math.abs(col.displacement.x);
+
+      if (isHorizontallyOver && player.pos.y < targetTop + 10 && penetrationY >= -2 && isVerticalLanding) {
+        // Prevent SAT from kicking player sideways across flat floor seams
         col.displacement.x = 0;
 
         // Force upward displacement to keep boots firmly flush on the surface
@@ -369,29 +395,37 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         } else if (col.displacement.y >= 0) {
           col.displacement.y = -0.1;
         }
-        // If col.displacement.y < 0, it is already pushing up: keep it intact!
         return;
       }
 
-      // ONE-WAY PLATFORMS: If falling but player's feet are completely below
-      // the platform's top surface (e.g. falling alongside underneath the platform):
-      if (isPlatform && playerBottom > tileTop + 10) {
-        col.preventResolution();
-        return;
-      }
+      // Otherwise, if player is touching the SIDE of the block (e.g. wall or corner):
+      // Keep SAT's lateral displacement (displacement.x) and DO NOT force vertical displacement!
+      // This ensures the player slides down the wall without getting stuck on an "invisible block".
     }
   });
 
-  // Additional safety callbacks for upward ceiling contact (ignore one-way platforms)
+  // Additional safety callbacks for upward ceiling contact
   player.onCollide("solid", (solid) => {
-    if (player.vel && player.vel.y < 0 && solid.pos.y < player.pos.y && !solid.is("platform")) {
-      player.vel.y = 0;
+    if (player.vel && player.vel.y < 0 && !solid.is("platform")) {
+      const solidHeight = solid.height ?? 24;
+      const solidBottom = solid.pos.y + solidHeight;
+      const solidWidth = solid.width ?? 24;
+      const overlapX = Math.min(player.pos.x + 8, solid.pos.x + solidWidth) - Math.max(player.pos.x - 8, solid.pos.x);
+      if (overlapX >= 4 && solidBottom <= player.pos.y + 6) {
+        player.vel.y = 0;
+      }
     }
   });
 
   player.onCollideUpdate("solid", (solid) => {
-    if (player.vel && player.vel.y < 0 && solid.pos.y < player.pos.y && !solid.is("platform")) {
-      player.vel.y = 0;
+    if (player.vel && player.vel.y < 0 && !solid.is("platform")) {
+      const solidHeight = solid.height ?? 24;
+      const solidBottom = solid.pos.y + solidHeight;
+      const solidWidth = solid.width ?? 24;
+      const overlapX = Math.min(player.pos.x + 8, solid.pos.x + solidWidth) - Math.max(player.pos.x - 8, solid.pos.x);
+      if (overlapX >= 4 && solidBottom <= player.pos.y + 6) {
+        player.vel.y = 0;
+      }
     }
   });
 

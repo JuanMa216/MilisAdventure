@@ -145,7 +145,7 @@ export function initLevel3(k) {
       "##                       ##", // 43 Spikes
       "##===   =================##", // 44 Tier 2 floor
       "##                       ##", // 45
-      "##                      ##", // 46 Wood platform (Skeleton)
+      "##                       ##", // 46 Wood platform (Skeleton)
       "##       =======         ##", // 47
       "##    G                  ##", // 48 Gem
       "##  ---             ---  ##", // 49 Side platforms
