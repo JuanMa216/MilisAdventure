@@ -41,7 +41,7 @@ export function initSanctuary(k) {
       k.sprite("bg_sanctuary"),
       k.pos(0, 0),
       k.fixed(),
-      k.scale(k.width() / 334, k.height() / 568),
+      k.scale(k.width() / 306, k.height() / 908),
       k.z(-10)
     ]);
 
