@@ -19,6 +19,8 @@ import { gameState } from "../state.js";
 export function initLevel1(k) {
   k.scene("level1", () => {
     gameState.currentLevel = 1;
+    gameState.vasesBrokenCount = 0;
+    gameState.allVasesDestroyed = false;
 
     // Reset camera and gravity
     k.setGravity(980);
@@ -85,6 +87,14 @@ export function initLevel1(k) {
     let player = null;
     const slimes = [];
 
+    // Count total breakable flower vases in level
+    let totalVasesInLevel = 0;
+    for (const r of mapLayout) {
+      for (const ch of r) {
+        if (ch === "V") totalVasesInLevel++;
+      }
+    }
+
     // Helper to spawn floating score text
     function showScorePopup(pos, pts) {
       const popup = k.add([
@@ -145,7 +155,22 @@ export function initLevel1(k) {
           switch (char) {
             case "V":
               // Breakable decorative flower vase (sword-breakable with shards and rewards)
-              createFlowerVase(k, x + 12, y + 12, showScorePopup);
+              createFlowerVase(k, x + 12, y + 12, showScorePopup, () => {
+                gameState.vasesBrokenCount++;
+                if (gameState.vasesBrokenCount >= totalVasesInLevel) {
+                  gameState.allVasesDestroyed = true;
+                  k.play("win");
+                  const secretCue = k.add([
+                    k.text("Algo ha cambiado en las profundidades...", { font: "pressstart", size: 7 }),
+                    k.pos(k.width() / 2, 68),
+                    k.anchor("center"),
+                    k.color(120, 255, 160),
+                    k.fixed(),
+                    k.z(95)
+                  ]);
+                  k.wait(2.5, () => secretCue.destroy());
+                }
+              });
               break;
 
             case "$":

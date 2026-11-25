@@ -368,6 +368,60 @@ export function initDungeonGreen(k) {
       portalLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
+    // --- Secret Sanctuary Portal (Only spawned if all Level 1 flower vases were destroyed) ---
+    if (gameState.allVasesDestroyed) {
+      const doorCol = 3;
+      const doorRow = 2;
+      const doorX = doorCol * tileSize;
+      const doorY = doorRow * tileSize;
+
+      // Platform under the secret door (cols 2, 3, 4 at row 3)
+      for (let c = 2; c <= 4; c++) {
+        k.add([
+          k.sprite("wood_platform"),
+          k.pos(c * tileSize, (doorRow + 1) * tileSize),
+          k.scale(tileSize / 16),
+          k.z(2)
+        ]);
+      }
+
+      k.add([
+        k.rect(tileSize * 3, tileSize),
+        k.pos(2 * tileSize, (doorRow + 1) * tileSize),
+        k.area(),
+        k.body({ isStatic: true }),
+        k.opacity(0),
+        k.z(1),
+        "solid",
+        "platform"
+      ]);
+
+      const secretDoor = k.add([
+        k.sprite("door_open"),
+        k.pos(doorX, doorY),
+        k.scale(tileSize / 16),
+        k.area({ shape: new k.Rect(k.vec2(0, 0), 16, 32) }),
+        k.color(140, 220, 255),
+        k.z(3),
+        "secret_sanctuary_door"
+      ]);
+
+      secretDoor.onUpdate(() => {
+        secretDoor.opacity = k.wave(0.75, 1, k.time() * 3.5);
+      });
+
+      const secretLabel = k.add([
+        k.text("SANTUARIO", { font: "pressstart", size: 6.5 }),
+        k.pos(doorX + 12, doorY - 10),
+        k.anchor("center"),
+        k.color(160, 230, 255),
+        k.z(10)
+      ]);
+      secretLabel.onUpdate(() => {
+        secretLabel.opacity = k.wave(0.6, 1, k.time() * 3.5);
+      });
+    }
+
     // Spawn player
     player = createPlayer(k, playerSpawnX, playerSpawnY, true);
 
@@ -468,6 +522,46 @@ export function initDungeonGreen(k) {
         gameState.hasKey = false;
         gameState.collectedBook = null;
         k.go("level2");
+      });
+    });
+
+    // 5. Secret Sanctuary Portal Transition
+    let enteredSanctuary = false;
+    player.onCollide("secret_sanctuary_door", () => {
+      if (enteredSanctuary) return;
+      enteredSanctuary = true;
+      k.play("win");
+      k.shake(8);
+
+      k.add([
+        k.rect(k.width(), 80),
+        k.pos(0, k.height() / 2 - 40),
+        k.color(10, 18, 28),
+        k.opacity(0.95),
+        k.fixed(),
+        k.z(200)
+      ]);
+
+      k.add([
+        k.text("¿¿¿ PORTAL ANCESTRAL DESPERTADO ???", { font: "pressstart", size: 9 }),
+        k.pos(k.width() / 2, k.height() / 2 - 12),
+        k.anchor("center"),
+        k.color(120, 220, 255),
+        k.fixed(),
+        k.z(201)
+      ]);
+
+      k.add([
+        k.text("Viajando al santuario olvidado...", { font: "pressstart", size: 7 }),
+        k.pos(k.width() / 2, k.height() / 2 + 12),
+        k.anchor("center"),
+        k.color(200, 230, 255),
+        k.fixed(),
+        k.z(201)
+      ]);
+
+      k.wait(1.5, () => {
+        k.go("sanctuary");
       });
     });
 

@@ -10,6 +10,7 @@ import { initVictory } from "./scenes/victory.js";
 import { initGameOver } from "./scenes/gameover.js";
 import { initSecret } from "./scenes/secret.js";
 import { initEasterEggCreep } from "./scenes/easteregg_creep.js";
+import { initSanctuary } from "./scenes/sanctuary.js";
 
 // --- 1. Load Character Sprites ---
 k.loadSprite("player", "sprites/player/mili.png", {
@@ -106,6 +107,39 @@ k.loadSprite("blood_monster", "sprites/enemies/blood_monster.png", {
   }
 });
 
+// Basic Monster Pack
+k.loadSprite("bloodshot_eye", "sprites/enemies/basic/bloodshot_eye.png", {
+  sliceX: 4,
+  sliceY: 1,
+  anims: {
+    move: { from: 0, to: 3, loop: true, speed: 8 }
+  }
+});
+
+k.loadSprite("red_cap", "sprites/enemies/basic/red_cap.png", {
+  sliceX: 4,
+  sliceY: 1,
+  anims: {
+    move: { from: 0, to: 3, loop: true, speed: 8 }
+  }
+});
+
+k.loadSprite("crushing_cyclops", "sprites/enemies/basic/crushing_cyclops.png", {
+  sliceX: 4,
+  sliceY: 1,
+  anims: {
+    move: { from: 0, to: 3, loop: true, speed: 6 }
+  }
+});
+
+k.loadSprite("stone_troll", "sprites/enemies/basic/stone_troll.png", {
+  sliceX: 4,
+  sliceY: 1,
+  anims: {
+    move: { from: 0, to: 3, loop: true, speed: 6 }
+  }
+});
+
 // --- 2. RottingPixels Dark Fantasy Medieval Tilesets ---
 // Castle (Level 1)
 k.loadSprite("stone_top", "sprites/tiles/stone_top.png");
@@ -145,6 +179,7 @@ k.loadSprite("bg_level2", "sprites/backgrounds/bg_level2.png");
 k.loadSprite("bg_level3", "sprites/backgrounds/bg_level3.png");
 k.loadSprite("bg_secret", "sprites/backgrounds/easter_egg.jpg");
 k.loadSprite("bg_easteregg_face", "sprites/backgrounds/easter_egg_face.jpg");
+k.loadSprite("bg_sanctuary", "sprites/backgrounds/sanctuary_bg.jpg");
 
 // --- 4. Retro Audio ---
 k.loadSound("jump", "sounds/jump.wav");
@@ -168,10 +203,18 @@ initVictory(k);
 initGameOver(k);
 initSecret(k);
 initEasterEggCreep(k);
+initSanctuary(k);
 
 // Start at Level 1, or Level 2 / Level 3 / Throne / Secret via URL query param (?level=2, ?level=3, ?level=throne, ?level=secret)
 const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 const levelParam = urlParams?.get("level");
+
+// Test flag: ?vases=all unlocks the secret door in dungeon_green immediately
+if (urlParams?.get("vases") === "all" || urlParams?.get("allVases") === "true") {
+  gameState.allVasesDestroyed = true;
+  gameState.vasesBrokenCount = 4;
+}
+
 let initialScene = "level1";
 if (levelParam === "2") initialScene = "level2";
 else if (levelParam === "3") initialScene = "level3";
@@ -185,6 +228,9 @@ else if (levelParam === "secret" || levelParam === "easteregg") {
 }
 else if (levelParam === "creep" || levelParam === "easteregg2") {
   initialScene = "easteregg_creep";
+}
+else if (levelParam === "sanctuary" || levelParam === "chamber") {
+  initialScene = "sanctuary";
 }
 
 k.go(initialScene);

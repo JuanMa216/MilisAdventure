@@ -15,9 +15,10 @@ import { gameState } from "../state.js";
  * @param {number} x - Center X position
  * @param {number} y - Center Y position
  * @param {Function} onScorePopup - Callback to display floating text
+ * @param {Function} onBreak - Callback when vase is destroyed
  * @returns {import("kaboom").GameObj} The vase game object
  */
-export function createFlowerVase(k, x, y, onScorePopup = null) {
+export function createFlowerVase(k, x, y, onScorePopup = null, onBreak = null) {
   const vase = k.add([
     k.sprite("flower_vase"),
     k.pos(x, y),
@@ -38,6 +39,9 @@ export function createFlowerVase(k, x, y, onScorePopup = null) {
         gameState.addScore(50);
         if (onScorePopup) {
           onScorePopup(this.pos, 50);
+        }
+        if (onBreak) {
+          onBreak(this);
         }
 
         // Spawn ceramic shards and petal debris
