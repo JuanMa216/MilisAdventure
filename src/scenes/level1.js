@@ -1,5 +1,6 @@
 import { createPlayer } from "../entities/player.js";
 import { createSlime } from "../entities/slime.js";
+import { createFlowerVase } from "../entities/flower_vase.js";
 import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
@@ -139,13 +140,14 @@ export function initLevel1(k) {
           }
           const length = col - startCol;
           platformSegments.push({ row, col: startCol, len: length });
-        } else if (char === "V") {
-          // Decorative flower vase
-          visualCols[col].push({ sprite: "flower_vase", pos: k.vec2(x, y) });
-          col++;
         } else {
           // Interactive objects
           switch (char) {
+            case "V":
+              // Breakable decorative flower vase (sword-breakable with shards and rewards)
+              createFlowerVase(k, x + 12, y + 12, showScorePopup);
+              break;
+
             case "$":
               // Coin (+100 points)
               k.add([
@@ -369,6 +371,19 @@ export function initLevel1(k) {
       k.play("coin");
       gameState.addScore(250);
       showScorePopup(gem.pos, 250);
+    });
+
+    // 2b. Collect Dropped Hearts from broken vases
+    player.onCollide("heart_drop", (heart) => {
+      heart.destroy();
+      k.play("coin");
+      if (gameState.lives < gameState.maxLives) {
+        gameState.lives++;
+        showScorePopup(heart.pos, "VIDA");
+      } else {
+        gameState.addScore(150);
+        showScorePopup(heart.pos, 150);
+      }
     });
 
     // 3. Spikes Hazard (Req-4: Lose life)
