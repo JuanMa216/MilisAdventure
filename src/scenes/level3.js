@@ -7,25 +7,20 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Level 3: "La Gran Torre de la Fortaleza Maldita" (Diseño Vertical: 27 cols x 70 filas)
- * 
- * Features & Architecture:
- * - Vertical tower layout: Player begins at the dungeon foundation (y ≈ 1618px)
- *   and ascends 5 vertical tiers of ancient fortress ruins to the rooftop Throne Gateway.
- * - Dynamic vertical camera tracking: Smoothly locks at width/2 and tracks Mili in Y,
- *   clamped precisely within [height/2, mapHeight - height/2].
- * - Moving platform elevator & horizontal gears across the tower abyss.
- * - Geyser trampoline mushrooms propelling the player through spike corridors.
- * - New Enemy Roster:
- *     * Skeleton Warriors (ancient swordsmen, 2 HP, melee slash attack)
- *     * Basic Slimes (bouncy toxic ooze, jump lunges)
- *     * Orc Warriors (heavy club attack, 3 HP)
- *     * Classic Slimes (patrol hazards)
- * - Summit Gateway: Reaching the summit reveals the Throne Gate (exit door) leading
- *   to the new dedicated Boss Arena scene ("throne").
- * - High-performance Frustum Culling & Consolidated Physics Colliders (solid 60 FPS).
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Nivel 3: "La Gran Torre de la Fortaleza Maldita" (diseño vertical: 27 cols x 70 filas).
+ *
+ * Características y arquitectura:
+ * - Torre vertical: el jugador inicia en la base de la mazmorra (y ≈ 1618 px)
+ *   y asciende por 5 tramos de ruinas hasta la Puerta al Trono en la cima.
+ * - Seguimiento vertical dinámico de la cámara: centrada en `width / 2` y siguiendo a Mili en Y,
+ *   acotada entre `[height / 2, mapHeight - height / 2]`.
+ * - Plataforma móvil horizontal y ascensor vertical sobre el abismo de la torre.
+ * - Trampolines géiser para impulsar al jugador entre pasillos de pinchos.
+ * - Repertorio de enemigos: Skeleton Warriors (2 PV), Basic Slimes, Orc Warriors (3 PV) y Slimes clásicos.
+ * - Puerta en la cima: al alcanzarla da paso a la arena del jefe final (`throne`).
+ * - Recorte por frustum y colisionadores físicos consolidados.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initLevel3(k) {
   k.scene("level3", () => {
@@ -36,14 +31,14 @@ export function initLevel3(k) {
     const tileSize = 24;
     const cols = 27;
     const rows = 70;
-    const mapWidth = cols * tileSize;   // 648 px (exact full-screen width)
-    const mapHeight = rows * tileSize; // 1680 px (epic 4.7-screen vertical ascent)
+    const mapWidth = cols * tileSize;   // 648 px (ancho exacto de pantalla)
+    const mapHeight = rows * tileSize; // 1680 px (ascenso vertical de ~4.7 pantallas)
 
     k.setGravity(980);
-    // Start camera at the tower bottom where player teleports in
+    // Inicia la cámara en la base de la torre donde aparece el jugador
     k.camPos(k.width() / 2, mapHeight - k.height() / 2);
 
-    // --- Atmospheric Dark Fortress Background ---
+    // --- Fondo atmosférico de fortaleza oscura ---
     k.add([
       k.sprite("bg_level3"),
       k.pos(0, 0),
@@ -52,7 +47,7 @@ export function initLevel3(k) {
       k.z(-10)
     ]);
 
-    // Dark moody overlay for tower atmosphere
+    // Superposición oscura para reforzar la atmósfera de la torre
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -62,7 +57,7 @@ export function initLevel3(k) {
       k.z(-8)
     ]);
 
-    // Objective banner under HUD
+    // Cartel de objetivo bajo el HUD
     k.add([
       k.rect(520, 20),
       k.pos(k.width() / 2, 48),
@@ -85,97 +80,103 @@ export function initLevel3(k) {
       k.z(81)
     ]);
 
-    // --- Vertical Tower Map Grid (27 columns x 70 rows = 648 x 1680 px) ---
-    // Legend:
-    // '#' dungeon_wall (boundary / masonry)
-    // '=' dungeon_top (ground)
-    // '-' dungeon_platform (one-way platform)
-    // '^' dungeon_spikes (hazard)
-    // '$' coin
-    // 'G' gem
-    // 'H' heart
-    // 'T' trampoline
-    // 'D' door to Throne Room
-    // '1' horizontal moving platform
-    // '2' vertical moving elevator
+    // --- Mapa vertical de la torre (27 columnas x 70 filas = 648 x 1680 px) ---
+    // Leyenda:
+    // '#' dungeon_wall (límite / mampostería)
+    // '=' dungeon_top (suelo)
+    // '-' dungeon_platform (plataforma)
+    // '^' dungeon_spikes (pinchos)
+    // '$' moneda
+    // 'G' gema
+    // 'H' corazón
+    // 'T' trampolín
+    // 'D' puerta hacia la Sala del Trono
+    // '1' plataforma móvil horizontal
+    // '2' ascensor móvil vertical
     const layout = [
       "##                       ##", // 0
-      "##           D           ##", // 1 Throne Gate (Door to Boss Arena)
-      "##                       ##", // 2 Space for 2-tile door height
-      "##        =======        ##", // 3 Gate threshold floor
+      "##           D           ##", // 1 Puerta del Trono (acceso al jefe)
+      "##                       ##", // 2 Espacio para la altura de 2 tiles de la puerta
+      "##        =======        ##", // 3 Suelo del umbral de salida
       "##   =                =  ##", // 4
-      "##       ^^^^ ^^^^       ##", // 5 Summit spikes
-      "##==  ===============  ==##", // 6 Summit Citadel floor (Skeletons)
+      "##       ^^^^ ^^^^       ##", // 5 Pinchos de la cima
+      "##==  ===============  ==##", // 6 Suelo de la ciudadela en la cima (Esqueletos)
       "##                       ##", // 7
-      "##   T                 T ##", // 8 Trampolines to Summit
-      "##  ===       G       ===##", // 9 High balconies with Gem
-      "##           ---         ##", // 10 Center step
+      "##   T                 T ##", // 8 Trampolines hacia la cima
+      "##  ===       G       ===##", // 9 Balcones altos con gema
+      "##           ---         ##", // 10 Peldaño central
       "##                       ##", // 11
-      "##       ---     ---     ##", // 12 Approach ledges
-      "##===                 ===##", // 13 Fortress Gate tier
+      "##       ---     ---     ##", // 12 Cornisas de acceso
+      "##===                 ===##", // 13 Nivel de puerta de fortaleza
       "##                       ##", // 14
-      "##         ^^^^^         ##", // 15 Spikes
-      "##        =======        ##", // 16 Stone floor (Skeleton)
+      "##         ^^^^^         ##", // 15 Pinchos
+      "##        =======        ##", // 16 Suelo de piedra (Esqueleto)
       "##                       ##", // 17
       "##   T       $       T   ##", // 18 Trampolines
       "##  ===             ===  ##", // 19
-      "##         -----         ##", // 20 Wooden bridge (Basic Slime)
+      "##         -----         ##", // 20 Puente de madera (Basic Slime)
       "##                       ##", // 21
-      "##          HHH          ##", // 22 Hearts
-      "##        =======        ##", // 23 Stone floor (Orc Guard)
+      "##          HHH          ##", // 22 Corazones
+      "##        =======        ##", // 23 Suelo de piedra (Orco guardia)
       "##                       ##", // 24
-      "##   ---           ---   ##", // 25 Side ledges
+      "##   ---           ---   ##", // 25 Cornisas laterales
       "##                       ##", // 26
-      "##=================   ===##", // 27 Tier 3 rampart
+      "##=================   ===##", // 27 Muralla del tramo 3
       "##                       ##", // 28
       "##  ===                  ##", // 29
-      "##         1             ##", // 30 Moving platform 1
+      "##         1             ##", // 30 Plataforma móvil 1
       "##                       ##", // 31
-      "##                 ====  ##", // 32 Platform (Skeleton)
+      "##                 ====  ##", // 32 Plataforma (Esqueleto)
       "##                       ##", // 33
-      "##       ---   ---       ##", // 34 Wooden stepping platforms
+      "##       ---   ---       ##", // 34 Plataformas de madera de paso
       "##                       ##", // 35
       "##                  ===  ##", // 36
-      "##                ====== ##", // 37 Stone platform (Orc Guard)
-      "##         2             ##", // 38 Vertical elevator
+      "##                ====== ##", // 37 Plataforma de piedra (Orco guardia)
+      "##         2             ##", // 38 Ascensor vertical
       "##                       ##", // 39
-      "##   ======              ##", // 40 Stone ledge (Basic Slime)
-      "##           $$$         ##", // 41 Gold coins
+      "##   ======              ##", // 40 Cornisa de piedra (Basic Slime)
+      "##           $$$         ##", // 41 Monedas de oro
       "##                       ##", // 42
-      "##                       ##", // 43 Spikes
-      "##===   =================##", // 44 Tier 2 floor
+      "##                       ##", // 43
+      "##===   =================##", // 44 Suelo del tramo 2
       "##                       ##", // 45
-      "##                       ##", // 46 Wood platform (Skeleton)
+      "##                       ##", // 46 Plataforma de madera (Esqueleto)
       "##       =======         ##", // 47
-      "##    G                  ##", // 48 Gem
-      "##  ---             ---  ##", // 49 Side platforms
+      "##    G                  ##", // 48 Gema
+      "##  ---             ---  ##", // 49 Plataformas laterales
       "##                       ##", // 50
-      "##         ^^^^^         ##", // 51 Spikes
-      "##        =======        ##", // 52 Stone platform (Orc Guard)
-      "##   T                   ##", // 53 Trampoline
+      "##         ^^^^^         ##", // 51 Pinchos
+      "##        =======        ##", // 52 Plataforma de piedra (Orco guardia)
+      "##   T                   ##", // 53 Trampolín
       "##  ===           ===    ##", // 54
-      "##                       ##", // 55 Wooden beam (Basic Slime)
+      "##                       ##", // 55 Viga de madera (Basic Slime)
       "##              =======  ##", // 56
       "##                       ##", // 57
-      "##        -----          ##", // 58 Wood platform (Slime)
+      "##        -----          ##", // 58 Plataforma de madera (Slime)
       "##                       ##", // 59
-      "##                  ===  ##", // 60 Stone step
+      "##                  ===  ##", // 60 Peldaño de piedra
       "##                       ##", // 61
-      "##  ===                  ##", // 62 Stone step (Skeleton)
-      "##          T            ##", // 63 Trampoline
-      "##         ===           ##", // 64 Solid block
+      "##  ===                  ##", // 62 Peldaño de piedra (Esqueleto)
+      "##          T            ##", // 63 Trampolín
+      "##         ===           ##", // 64 Bloque sólido
       "##                       ##", // 65
-      "##    @                  ##", // 66 Player spawn
+      "##    @                  ##", // 66 Aparición del jugador
       "##                       ##", // 67
-      "##=======================##", // 68 Base floor
-      "###########################"  // 69 Solid bedrock
+      "##=======================##", // 68 Suelo base
+      "###########################"  // 69 Cimiento sólido
     ];
 
     let player = null;
     const movingPlatforms = [];
     const enemies = [];
 
-    // Helper for floating text notifications
+    /**
+     * Muestra un texto flotante ascendente con desvanecimiento.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 100)) {
       const pop = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -191,12 +192,12 @@ export function initLevel3(k) {
       });
     }
 
-    // Pre-calculate visual tiles grouped by row for zero-allocation, frustum-culled rendering
+    // Precalcula los tiles visuales agrupados por fila para recorte por frustum sin asignaciones
     const visualRows = [];
     const groundSegments = [];
     const platformSegments = [];
 
-    // Build the 70-row vertical tower
+    // Construye la torre vertical de 70 filas
     for (let row = 0; row < rows; row++) {
       const line = layout[row];
       const rowTiles = [];
@@ -229,7 +230,7 @@ export function initLevel3(k) {
         } else {
           switch (char) {
             case "^":
-              // Deadly dungeon spikes (precise player-favorable hazard hitbox)
+              // Pinchos mortales de mazmorra (hitbox ajustada a favor del jugador)
               k.add([
                 k.sprite("dungeon_spikes"),
                 k.pos(x, y),
@@ -241,7 +242,7 @@ export function initLevel3(k) {
               break;
 
             case "$":
-              // Gold coin
+              // Moneda de oro
               k.add([
                 k.sprite("coin"),
                 k.pos(x + 4, y + 4),
@@ -253,7 +254,7 @@ export function initLevel3(k) {
               break;
 
             case "G":
-              // Precious gem
+              // Gema preciosa
               k.add([
                 k.sprite("gem"),
                 k.pos(x + 4, y + 4),
@@ -265,7 +266,7 @@ export function initLevel3(k) {
               break;
 
             case "H":
-              // Restorative Heart
+              // Corazón curativo
               k.add([
                 k.sprite("heart_full"),
                 k.pos(x + 4, y + 4),
@@ -277,7 +278,7 @@ export function initLevel3(k) {
               break;
 
             case "T":
-              // Geyser / spring trampoline (flush on block below)
+              // Géiser / trampolín de resorte (apoyado sobre el bloque inferior)
               k.add([
                 k.sprite("spring"),
                 k.pos(x, y),
@@ -289,7 +290,7 @@ export function initLevel3(k) {
               break;
 
             case "D":
-              // Throne Gateway Door (Leads to Boss Arena)
+              // Puerta al Trono (lleva a la arena del jefe final)
               k.add([
                 k.sprite("door_closed"),
                 k.pos(x, y),
@@ -301,7 +302,7 @@ export function initLevel3(k) {
               break;
 
             case "1":
-              // Moving Platform 1 (Horizontal patrol across row 30: x = 168 to 432)
+              // Plataforma móvil 1 (patrulla horizontal en la fila 30: x = 168 a 432)
               {
                 const plat = k.add([
                   k.sprite("dungeon_platform_2x"),
@@ -327,7 +328,7 @@ export function initLevel3(k) {
               break;
 
             case "2":
-              // Moving Elevator 2 (Vertical ascent: y = 888 to 1032)
+              // Ascensor móvil 2 (recorrido vertical: y = 888 a 1032)
               {
                 const elevator = k.add([
                   k.sprite("dungeon_platform_2x"),
@@ -361,9 +362,8 @@ export function initLevel3(k) {
       visualRows.push(rowTiles);
     }
 
-    // Dedicated frustum-culled tilemap renderer:
-    // Only draws the rows visible within viewport (+ 48px vertical safety margin)
-    // Zero WebGL overhead for off-screen rows!
+    // Renderizador de tilemap con recorte por frustum vertical:
+    // Solo dibuja las filas visibles en el viewport (+48 px de margen vertical)
     const tilemap = k.add([
       k.z(1)
     ]);
@@ -387,8 +387,8 @@ export function initLevel3(k) {
       }
     });
 
-    // Consolidated Static Physics Colliders:
-    // 1. Continuous Left Tower Wall Boundary (cols 0-1: x = 0..48)
+    // Colisionadores físicos estáticos consolidados:
+    // 1. Muro límite izquierdo continuo de la torre (cols 0-1: x = 0..48)
     k.add([
       k.rect(48, mapHeight),
       k.pos(0, 0),
@@ -399,7 +399,7 @@ export function initLevel3(k) {
       "wall"
     ]);
 
-    // 2. Continuous Right Tower Wall Boundary (cols 25-26: x = 600..648)
+    // 2. Muro límite derecho continuo de la torre (cols 25-26: x = 600..648)
     k.add([
       k.rect(48, mapHeight),
       k.pos(mapWidth - 48, 0),
@@ -410,7 +410,7 @@ export function initLevel3(k) {
       "wall"
     ]);
 
-    // 3. Continuous Bedrock Base Boundary (Row 69 and beneath: y = 1656+)
+    // 3. Cimiento continuo de la base (fila 69 y por debajo: y = 1656+)
     k.add([
       k.rect(mapWidth, 120),
       k.pos(0, 69 * tileSize),
@@ -420,7 +420,7 @@ export function initLevel3(k) {
       "solid"
     ]);
 
-    // 4. Consolidated Ground Colliders
+    // 4. Colisionadores consolidados de suelo
     for (const seg of groundSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -433,7 +433,7 @@ export function initLevel3(k) {
       ]);
     }
 
-    // 5. Consolidated Platform Colliders
+    // 5. Colisionadores consolidados de plataformas
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -446,7 +446,7 @@ export function initLevel3(k) {
       ]);
     }
 
-    // Animated glowing label above Throne Gate Door
+    // Etiqueta animada sobre la Puerta al Trono
     const throneDoorLabel = k.add([
       k.text("PUERTA AL TRONO", { font: "pressstart", size: 7 }),
       k.pos(13 * tileSize + 12, 1 * tileSize - 8),
@@ -458,45 +458,45 @@ export function initLevel3(k) {
       throneDoorLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
-    // Initialize HUD
+    // Inicializa el HUD
     createHUD(k, "NIVEL 3: LA TORRE");
 
-    // Spawn player at "@" position (row 66, flush on base floor at y = 1618)
+    // Aparición del jugador en '@' (fila 66, apoyado en el suelo base y = 1618)
     player = createPlayer(k, 120, 1618, true, 1760);
 
     // =========================================================================
-    // Spawn Expanded Enemy Roster across the 5 Tiers of the Tower
+    // Aparición del repertorio de enemigos en los 5 tramos de la torre
     // =========================================================================
 
-    // Tier 1 (Base & Lower Ascent: rows 55-66)
-    enemies.push(createSkeleton(k, 4 * tileSize, 1475, 24));      // Row 62 stone step
-    enemies.push(createSlime(k, 12 * tileSize, 1378, 30));         // Row 58 wood platform
-    enemies.push(createBasicSlime(k, 20 * tileSize, 1307, 24));    // Row 55 wooden beam
+    // Tramo 1 (Base y ascenso inferior: filas 55-66)
+    enemies.push(createSkeleton(k, 4 * tileSize, 1475, 24));      // Peldaño de piedra fila 62
+    enemies.push(createSlime(k, 12 * tileSize, 1378, 30));         // Plataforma de madera fila 58
+    enemies.push(createBasicSlime(k, 20 * tileSize, 1307, 24));    // Viga de madera fila 55
 
-    // Tier 2 (Mid-Lower Ramparts: rows 44-54)
-    enemies.push(createOrc(k, 12 * tileSize, 1235, 36));          // Row 52 stone platform
-    enemies.push(createSkeleton(k, 12 * tileSize, 1090, 28));     // Row 46 wood platform
-    enemies.push(createBasicSlime(k, 6 * tileSize, 946, 36));      // Row 40 stone ledge
+    // Tramo 2 (Murallas medio-bajas: filas 44-54)
+    enemies.push(createOrc(k, 12 * tileSize, 1235, 36));          // Plataforma de piedra fila 52
+    enemies.push(createSkeleton(k, 12 * tileSize, 1090, 28));     // Plataforma de madera fila 46
+    enemies.push(createBasicSlime(k, 6 * tileSize, 946, 36));      // Cornisa de piedra fila 40
 
-    // Tier 3 (Middle Fortress & Chasm: rows 30-43)
-    enemies.push(createOrc(k, 19 * tileSize, 874, 36));           // Row 37 stone platform
-    enemies.push(createSkeleton(k, 20 * tileSize, 755, 24));      // Row 32 platform
+    // Tramo 3 (Fortaleza media y abismo: filas 30-43)
+    enemies.push(createOrc(k, 19 * tileSize, 874, 36));           // Plataforma de piedra fila 37
+    enemies.push(createSkeleton(k, 20 * tileSize, 755, 24));      // Plataforma fila 32
 
-    // Tier 4 (Upper Gate & Spike Hall: rows 13-29)
-    enemies.push(createOrc(k, 13 * tileSize, 538, 36));           // Row 23 stone floor
-    enemies.push(createBasicSlime(k, 12 * tileSize, 467, 30));     // Row 20 wooden bridge
-    enemies.push(createSkeleton(k, 12 * tileSize, 370, 32));      // Row 16 stone floor
+    // Tramo 4 (Puerta superior y sala de pinchos: filas 13-29)
+    enemies.push(createOrc(k, 13 * tileSize, 538, 36));           // Suelo de piedra fila 23
+    enemies.push(createBasicSlime(k, 12 * tileSize, 467, 30));     // Puente de madera fila 20
+    enemies.push(createSkeleton(k, 12 * tileSize, 370, 32));      // Suelo de piedra fila 16
 
-    // Tier 5 (Summit Citadel / Throne Gate Guards: rows 4-9)
-    enemies.push(createSkeleton(k, 7 * tileSize, 130, 36));       // Row 6 Summit Citadel guard (left)
-    enemies.push(createSkeleton(k, 18 * tileSize, 130, 36));      // Row 6 Summit Citadel guard (right)
-    enemies.push(createSlime(k, 12 * tileSize, 202, 24));         // Row 9 center stepping ledge
+    // Tramo 5 (Ciudadela de la cima / guardias de la puerta: filas 4-9)
+    enemies.push(createSkeleton(k, 7 * tileSize, 130, 36));       // Guardia izquierdo de la cima (fila 6)
+    enemies.push(createSkeleton(k, 18 * tileSize, 130, 36));      // Guardia derecho de la cima (fila 6)
+    enemies.push(createSlime(k, 12 * tileSize, 202, 24));         // Cornisa central fila 9
 
-    // Update moving platforms with player drag physics
+    // Actualiza las plataformas móviles y arrastra al jugador si está apoyado
     k.onUpdate(() => {
       for (const plat of movingPlatforms) {
         if (plat.startX !== undefined) {
-          // Horizontal moving platform
+          // Plataforma móvil horizontal
           const oldX = plat.pos.x;
           plat.pos.x += plat.speed * plat.dir * k.dt();
           plat.deltaX = plat.pos.x - oldX;
@@ -510,7 +510,7 @@ export function initLevel3(k) {
             plat.dir = 1;
           }
         } else if (plat.startY !== undefined) {
-          // Vertical elevator
+          // Ascensor vertical
           const oldY = plat.pos.y;
           plat.pos.y += plat.speed * plat.dir * k.dt();
           plat.deltaX = 0;
@@ -525,7 +525,7 @@ export function initLevel3(k) {
           }
         }
 
-        // Drag player if standing on moving platform (fast zero-allocation check)
+        // Arrastra al jugador cuando está apoyado sobre la plataforma móvil
         if (player && player.isGrounded()) {
           const platWidth = 48;
           const isStanding =
@@ -541,9 +541,9 @@ export function initLevel3(k) {
       }
     });
 
-    // --- Interactive Collisions & Triggers ---
+    // --- Colisiones y disparadores interactivos ---
 
-    // 1. Coins & Collectibles
+    // 1. Monedas y coleccionables
     player.onCollide("coin", (coin) => {
       coin.destroy();
       gameState.addScore(100);
@@ -570,7 +570,7 @@ export function initLevel3(k) {
       k.play("win");
     });
 
-    // 2. Geyser Trampolines (Super jump)
+    // 2. Trampolines géiser (supersalto)
     player.onCollide("spring", (spr) => {
       k.play("spring");
       player.jump(player.jumpForce * 1.45);
@@ -581,16 +581,16 @@ export function initLevel3(k) {
       });
     });
 
-    // 3. Spikes Hazard
+    // 3. Peligro de pinchos
     player.onCollide("spikes", () => {
       player.receiveDamage(0);
     });
 
-    // 4. Combat collisions with enemies
+    // 4. Colisiones de combate contra enemigos
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || enemy.isHurt) return;
 
-      // Robust stomp check: Player is above enemy in the air or falling
+      // Comprobación de pisotón: el jugador está por encima del enemigo en el aire o cayendo
       const isStomping =
         (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
@@ -607,7 +607,7 @@ export function initLevel3(k) {
         return;
       }
 
-      // Player receives damage and knockback
+      // El jugador recibe daño y empuje
       const knockDir = player.pos.x < enemy.pos.x ? -1 : 1;
       player.receiveDamage(knockDir);
     });
@@ -624,7 +624,7 @@ export function initLevel3(k) {
       player.receiveDamage(knockDir);
     });
 
-    // 5. Level Exit Door Transition: Enters the Throne Room ("throne")
+    // 5. Transición por la puerta de salida hacia la Sala del Trono ("throne")
     let enteringThrone = false;
     player.onCollide("exit_door", (door) => {
       if (enteringThrone) return;
@@ -633,7 +633,7 @@ export function initLevel3(k) {
       door.use(k.sprite("door_open"));
       k.play("win");
 
-      // Grand Portal Transition Banner
+      // Cartel de transición hacia el portal del trono
       k.add([
         k.rect(500, 60),
         k.pos(k.width() / 2, k.height() / 2),
@@ -667,23 +667,23 @@ export function initLevel3(k) {
       });
     });
 
-    // --- Main Update Loop: Vertical Camera Tracking & Clamp ---
+    // --- Bucle principal: seguimiento vertical de cámara y límites ---
     k.onUpdate(() => {
       if (!player) return;
 
-      // Clamp player within horizontal tower walls (lateral bounds: x = 55 to 593)
+      // Mantiene al jugador dentro de los muros laterales de la torre (x = 55 a 593)
       if (player.pos.x < 55) {
         player.pos.x = 55;
       } else if (player.pos.x > mapWidth - 55) {
         player.pos.x = mapWidth - 55;
       }
 
-      // Instant death if falling into bottom pit (y > 1720)
+      // Muerte instantánea al caer al vacío inferior (y > 1720)
       if (player.pos.y > 1720 && !player.isDead) {
         player.die();
       }
 
-      // Vertical Camera Tracking: Locks horizontally at width/2 and smoothly follows Mili in Y
+      // Seguimiento vertical de cámara: fijo en width/2 y siguiendo a Mili en Y
       const targetCamY = Math.max(k.height() / 2, Math.min(player.pos.y, mapHeight - k.height() / 2));
       k.camPos(k.width() / 2, targetCamY);
     });

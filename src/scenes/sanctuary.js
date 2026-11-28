@@ -9,21 +9,21 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Secret Ancient Sanctuary (Disguised 3rd Easter Egg Realm)
- * 
- * Unlocked only when all decorative flower vases in Level 1 are broken,
- * revealing an ethereal portal within Dungeon Green.
- * 
- * Features:
- * - Real-world mysterious photo background with atmospheric cosmic vignette.
- * - Basic Asset Pack enemy roster:
- *   - Bloodshot Eyes (aerial hovering sentries)
- *   - Red Caps (rapid subterranean goblins)
- *   - Crushing Cyclops (imposing 6 HP brute mini-boss)
- * - Aerial trampolines and multi-tier platforms.
- * - Defeating the sanctuary guardians activates the celestial exit portal (+3000 bonus).
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Escena del Santuario Ancestral.
+ *
+ * Se desbloquea únicamente al romper todos los jarrones decorativos del Nivel 1,
+ * revelando un portal etéreo dentro de la Mazmorra Verde.
+ *
+ * Características:
+ * - Fondo fotográfico misterioso con viñeta cósmica atmosférica.
+ * - Guardianes del Santuario:
+ *   - Bloodshot Eyes (centinelas aéreos)
+ *   - Red Caps (duendes subterráneos rápidos)
+ *   - Crushing Cyclops (bruto imponente de 6 PV)
+ * - Trampolines aéreos y plataformas en múltiples alturas.
+ * - Al derrotar a los guardianes se activa el portal celestial de salida (+3000 bono).
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initSanctuary(k) {
   k.scene("sanctuary", () => {
@@ -36,7 +36,7 @@ export function initSanctuary(k) {
     const mapWidth = cols * tileSize;  // 720 px
     const mapHeight = rows * tileSize; // 360 px
 
-    // --- Atmospheric Photo Background ---
+    // --- Fondo fotográfico atmosférico ---
     k.add([
       k.sprite("bg_sanctuary"),
       k.pos(0, 0),
@@ -45,7 +45,7 @@ export function initSanctuary(k) {
       k.z(-10)
     ]);
 
-    // Cosmic atmospheric vignette overlay
+    // Viñeta cósmica atmosférica
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -55,7 +55,7 @@ export function initSanctuary(k) {
       k.z(-8)
     ]);
 
-    // Title banner under HUD
+    // Cartel de título bajo el HUD
     k.add([
       k.rect(520, 20),
       k.pos(k.width() / 2, 48),
@@ -82,23 +82,23 @@ export function initSanctuary(k) {
       titleText.opacity = k.wave(0.7, 1, k.time() * 3);
     });
 
-    // 30 cols x 15 rows arena layout
+    // Diseño de la arena: 30 columnas x 15 filas
     const layout = [
       "##                          ##", // 0
       "##                          ##", // 1
-      "##  G   ---        ---   G  ##", // 2 High ledges with gems
+      "##  G   ---        ---   G  ##", // 2 Cornisas altas con gemas
       "##                          ##", // 3
       "##   T                  T   ##", // 4 Trampolines
-      "##  ===    $$$  $$$    ===  ##", // 5 Mid balconies
+      "##  ===    $$$  $$$    ===  ##", // 5 Balcones medios
       "##                          ##", // 6
-      "##       ---      ---       ##", // 7 Stepping platforms
+      "##       ---      ---       ##", // 7 Plataformas de paso
       "##                          ##", // 8
-      "##   ---              ---   ##", // 9 Lower ledges
+      "##   ---              ---   ##", // 9 Cornisas inferiores
       "##                          ##", // 10
-      "##  ^^^^              ^^^^  ##", // 11 Hazard spikes on sides
+      "##  ^^^^              ^^^^  ##", // 11 Pinchos laterales de peligro
       "## ======            ====== ##", // 12
-      "## @                      D ##", // 13 Ground floor: Mili & Return portal
-      "=============================="  // 14 Solid ground foundation
+      "## @                      D ##", // 13 Suelo: aparición de Mili y portal de retorno
+      "=============================="  // 14 Base sólida del suelo
     ];
 
     let player = null;
@@ -107,7 +107,13 @@ export function initSanctuary(k) {
     let totalEnemies = 0;
     let defeatedEnemies = 0;
 
-    // Helper for score/floating popups
+    /**
+     * Muestra un texto flotante ascendente en la posición indicada.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 80)) {
       const popup = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -122,7 +128,7 @@ export function initSanctuary(k) {
       k.wait(0.6, () => popup.destroy());
     }
 
-    // Consolidated colliders
+    // Estructuras para colisionadores consolidados y columnas visuales
     const visualCols = Array.from({ length: cols }, () => []);
     const groundSegments = [];
     const wallSegments = [];
@@ -233,7 +239,7 @@ export function initSanctuary(k) {
       }
     }
 
-    // Consolidated ground colliders
+    // Colisionadores consolidados de suelo
     groundSegments.forEach((seg) => {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -247,7 +253,7 @@ export function initSanctuary(k) {
       ]);
     });
 
-    // Consolidated wall colliders
+    // Colisionadores consolidados de muros
     wallSegments.forEach((seg) => {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -261,7 +267,7 @@ export function initSanctuary(k) {
       ]);
     });
 
-    // Solid platform colliders
+    // Colisionadores sólidos de plataformas
     platformSegments.forEach((seg) => {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -275,15 +281,18 @@ export function initSanctuary(k) {
       ]);
     });
 
-    // Spawn player
+    // Aparición del jugador
     player = createPlayer(k, playerSpawnX, playerSpawnY);
     gameState.player = player;
 
-    // Zero-allocation camera frustum culling on static visuals
+    // Recorte por frustum de cámara sin asignaciones extra para los tiles visuales estáticos
     const spawnedVisualsByCol = Array.from({ length: cols }, () => []);
     let prevMinCol = -1;
     let prevMaxCol = -1;
 
+    /**
+     * Crea o destruye las columnas de tiles visibles según el rango horizontal de la cámara.
+     */
     function updateTileVisibility() {
       const camX = k.camPos().x;
       const halfW = k.width() / 2;
@@ -326,7 +335,10 @@ export function initSanctuary(k) {
 
     updateTileVisibility();
 
-    // --- Spawn Basic Monster Pack Guardians ---
+    // --- Aparición de los guardianes del Santuario ---
+    /**
+     * Registra la derrota de un guardián y dispara la victoria cuando caen todos.
+     */
     function onMonsterDied() {
       defeatedEnemies++;
       if (defeatedEnemies >= totalEnemies) {
@@ -334,20 +346,20 @@ export function initSanctuary(k) {
       }
     }
 
-    // 1. Two Bloodshot Eyes patrolling the high skies
+    // 1. Dos Bloodshot Eyes patrullando la zona alta
     enemies.push(createBloodshotEye(k, 180, 75, 70, onMonsterDied));
     enemies.push(createBloodshotEye(k, 500, 75, 70, onMonsterDied));
 
-    // 2. Two Red Cap goblins patrolling mid balconies
+    // 2. Dos duendes Red Cap patrullando los balcones medios
     enemies.push(createRedCap(k, 250, 105, 50, onMonsterDied));
     enemies.push(createRedCap(k, 430, 105, 50, onMonsterDied));
 
-    // 3. One Crushing Cyclops brute guarding the central sanctum floor
+    // 3. Un Crushing Cyclops custodiando el suelo central del santuario
     enemies.push(createCrushingCyclops(k, 360, 300, 80, onMonsterDied));
 
-    totalEnemies = enemies.length; // 5 monsters
+    totalEnemies = enemies.length; // 5 guardianes
 
-    // Spawn the return portal initially closed / dormant
+    // Portal de retorno inicialmente cerrado / latente
     exitPortal = k.add([
       k.sprite("door_closed"),
       k.pos(exitPortalX, exitPortalY),
@@ -358,8 +370,11 @@ export function initSanctuary(k) {
       "sanctuary_portal"
     ]);
 
-    // Victorious sequence when all monsters are defeated
+    // Secuencia de victoria al derrotar a todos los guardianes
     let trialCompleted = false;
+    /**
+     * Otorga el bono de purificación del Santuario y despierta el portal de retorno.
+     */
     function onAllMonstersDefeated() {
       if (trialCompleted) return;
       trialCompleted = true;
@@ -368,18 +383,18 @@ export function initSanctuary(k) {
       k.shake(10);
       gameState.addScore(3000);
 
-      // Transform exit portal to radiant open portal
+      // Transforma el portal de salida en un portal abierto radiante
       if (exitPortal) {
         exitPortal.use(k.sprite("door_open"));
         exitPortal.color = k.rgb(160, 255, 210);
 
-        // Radiant pulsing glow
+        // Brillo pulsante del portal
         exitPortal.onUpdate(() => {
           exitPortal.scale = k.vec2(tileSize / 16 * k.wave(0.95, 1.15, k.time() * 4));
         });
       }
 
-      // Grand Victory Banner
+      // Cartel principal de victoria
       k.add([
         k.rect(540, 70),
         k.pos(k.width() / 2, k.height() / 2 - 20),
@@ -415,7 +430,7 @@ export function initSanctuary(k) {
       ]);
     }
 
-    // Portal Exit Interaction
+    // Interacción al entrar en el portal de salida
     let enteredExit = false;
     player.onCollide("sanctuary_portal", () => {
       if (enteredExit) return;
@@ -450,13 +465,13 @@ export function initSanctuary(k) {
       ]);
 
       k.wait(2.0, () => {
-        // Return safely to Level 2
+        // Regresa de forma segura al Nivel 2
         gameState.currentLevel = 2;
         k.go("level2");
       });
     });
 
-    // Combat with Basic Monsters (Sword Melee & Aerial Stomps)
+    // Combate contra los guardianes (espada y pisotones aéreos)
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || enemy.isHurt) return;
 
@@ -465,7 +480,7 @@ export function initSanctuary(k) {
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
 
       if (isStomping) {
-        // Stomp deals 2 critical damage with bounce
+        // El pisotón inflige 2 de daño crítico con rebote
         enemy.takeDamage(2, player.pos.x);
         player.jump(player.jumpForce * 0.85);
         player.hasDoubleJumped = false;
@@ -473,7 +488,7 @@ export function initSanctuary(k) {
         return;
       }
 
-      // If Mili is actively shielding and facing the monster, block the strike
+      // Si Mili cubre con el escudo mirando al enemigo, bloquea el golpe
       if (player.isShielding) {
         const facingEnemy = (player.flipX && enemy.pos.x < player.pos.x) ||
                             (!player.flipX && enemy.pos.x > player.pos.x);
@@ -490,7 +505,7 @@ export function initSanctuary(k) {
       player.receiveDamage(knockDir);
     });
 
-    // Spring trampoline bounce
+    // Rebote en trampolines
     player.onCollide("spring", (s) => {
       k.play("jump");
       player.jump(player.jumpForce * 1.55);
@@ -498,13 +513,13 @@ export function initSanctuary(k) {
       showPopup(s.pos, "¡IMPULSO!", k.rgb(120, 255, 200));
     });
 
-    // Spikes hazard
+    // Peligro de pinchos
     player.onCollide("spikes", () => {
       if (player.isHurt || player.isDead) return;
       player.receiveDamage(0);
     });
 
-    // Coins (+100)
+    // Monedas (+100)
     player.onCollide("coin", (c) => {
       c.destroy();
       k.play("coin");
@@ -512,7 +527,7 @@ export function initSanctuary(k) {
       showPopup(c.pos, "+100");
     });
 
-    // Gems (+250)
+    // Gemas (+250)
     player.onCollide("gem", (g) => {
       g.destroy();
       k.play("coin");
@@ -520,7 +535,7 @@ export function initSanctuary(k) {
       showPopup(g.pos, "+250", k.rgb(120, 220, 255));
     });
 
-    // Heart drops
+    // Corazones soltados por enemigos
     player.onCollide("heart_drop", (h) => {
       h.destroy();
       k.play("powerup");
@@ -528,22 +543,22 @@ export function initSanctuary(k) {
       showPopup(h.pos, "+1 VIDA", k.rgb(255, 100, 140));
     });
 
-    // Main Update Loop
+    // Bucle principal de actualización
     k.onUpdate(() => {
       if (!player) return;
 
-      // Lateral bounds
+      // Límites laterales
       if (player.pos.x < 16) player.pos.x = 16;
       if (player.pos.x > mapWidth - 16) player.pos.x = mapWidth - 16;
 
-      // Bottom pit safety
+      // Seguridad ante caída al vacío inferior
       if (player.pos.y > mapHeight + 50 && !player.isDead) {
         player.receiveDamage(0);
         player.pos.x = playerSpawnX;
         player.pos.y = playerSpawnY;
       }
 
-      // Smooth camera follow
+      // Seguimiento suave de la cámara
       const targetCamX = Math.max(
         k.width() / 2,
         Math.min(mapWidth - k.width() / 2, player.pos.x)
@@ -556,7 +571,7 @@ export function initSanctuary(k) {
       updateTileVisibility();
     });
 
-    // Initialize HUD
+    // Inicializa el HUD
     createHUD(k);
   });
 }

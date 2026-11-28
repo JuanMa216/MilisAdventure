@@ -4,17 +4,17 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Secret Bonus Dungeon: "La Garganta Esmeralda"
- * 
- * Features & Architecture:
- * - Triggered when entering the catacomb portal with the Green Grimoire (book_green).
- * - Full performance optimization: zero-allocation frustum culling on static tilemap.
- * - Continuous consolidated colliders for ground, walls, and platforms (eliminates floor phasing).
- * - Deep foundation bedrock on row 14 to eliminate physics tunneling.
- * - Vertical moving platform over toxic stalagmites with zero-allocation passenger dragging.
- * - Rewards player with +500 bonus points and returns safely to Level 2.
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Mazmorra secreta de bonificación: "La Garganta Esmeralda".
+ *
+ * Características y arquitectura:
+ * - Se activa al entrar al portal de las catacumbas con el Grimorio Esmeralda (`book_green`).
+ * - Optimización completa: recorte por frustum sin asignaciones en el tilemap estático.
+ * - Colisionadores continuos consolidados para suelo, muros y plataformas.
+ * - Cimiento profundo en la fila 14 para evitar que los cuerpos atraviesen el suelo.
+ * - Plataforma móvil vertical sobre estalagmitas tóxicas con arrastre del jugador.
+ * - Recompensa al jugador con +500 puntos de bono y lo devuelve al Nivel 2.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initDungeonGreen(k) {
   k.scene("dungeon_green", () => {
@@ -27,7 +27,7 @@ export function initDungeonGreen(k) {
     const mapWidth = cols * tileSize;   // 960 px
     const mapHeight = rows * tileSize; // 360 px
 
-    // --- Atmospheric Toxic Emerald Cavern Background ---
+    // --- Fondo atmosférico de caverna esmeralda tóxica ---
     k.add([
       k.sprite("bg_level2"),
       k.pos(0, 0),
@@ -37,7 +37,7 @@ export function initDungeonGreen(k) {
       k.z(-10)
     ]);
 
-    // Ominous emerald green overlay
+    // Superposición verde esmeralda
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -47,7 +47,7 @@ export function initDungeonGreen(k) {
       k.z(-8)
     ]);
 
-    // Hint banner under HUD
+    // Cartel de pista bajo el HUD
     k.add([
       k.rect(520, 20),
       k.pos(k.width() / 2, 48),
@@ -70,7 +70,7 @@ export function initDungeonGreen(k) {
       k.z(81)
     ]);
 
-    // 40 columns x 15 rows map
+    // Mapa de 40 columnas x 15 filas
     const mapLayout = [
       " G G G                                  ", // 0
       " G G                  $$$               ", // 1
@@ -92,7 +92,13 @@ export function initDungeonGreen(k) {
     let player = null;
     const enemies = [];
 
-    // Helper for score/text popups
+    /**
+     * Muestra un texto flotante ascendente con puntos o avisos.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 80)) {
       const popup = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -107,7 +113,7 @@ export function initDungeonGreen(k) {
       k.wait(0.6, () => popup.destroy());
     }
 
-    // Pre-calculate visual tiles grouped by column for frustum culling
+    // Precalcula los tiles visuales agrupados por columna para recorte por frustum
     const visualCols = Array.from({ length: cols }, () => []);
     const groundSegments = [];
     const wallSegments = [];
@@ -118,7 +124,7 @@ export function initDungeonGreen(k) {
     let movingPlatX = 22 * tileSize;
     let movingPlatY = 9 * tileSize;
 
-    // Parse map layout
+    // Analiza el diseño del mapa
     for (let row = 0; row < rows; row++) {
       const line = mapLayout[row];
       let col = 0;
@@ -234,7 +240,7 @@ export function initDungeonGreen(k) {
       }
     }
 
-    // --- Dedicated Frustum-Culled Tilemap Renderer ---
+    // --- Renderizador de tilemap con recorte por frustum ---
     const tilemap = k.add([k.z(1)]);
     const tileScale = k.vec2(tileSize / 16, tileSize / 16);
 
@@ -256,10 +262,10 @@ export function initDungeonGreen(k) {
       }
     });
 
-    // --- Consolidated Static Physics Colliders (Zero Seam Hitching & Zero Phasing) ---
+    // --- Colisionadores físicos estáticos consolidados ---
 
-    // 1. Continuous Ground Colliders
-    // Extends bottom foundation ground (row 14) 120px deep to completely eliminate physics tunneling
+    // 1. Colisionadores continuos de suelo
+    // Extiende el cimiento inferior (fila 14) 120 px hacia abajo para evitar atravesar el suelo
     for (const seg of groundSegments) {
       const height = seg.row === 14 ? 120 : tileSize;
       k.add([
@@ -273,7 +279,7 @@ export function initDungeonGreen(k) {
       ]);
     }
 
-    // 2. Continuous Wall Colliders
+    // 2. Colisionadores continuos de muros
     for (const seg of wallSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -286,7 +292,7 @@ export function initDungeonGreen(k) {
       ]);
     }
 
-    // 3. Continuous One-Way Floating Platform Colliders
+    // 3. Colisionadores continuos de plataformas flotantes
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -300,7 +306,7 @@ export function initDungeonGreen(k) {
       ]);
     }
 
-    // 4. Map Boundaries (Lateral Walls)
+    // 4. Límites laterales del mapa
     k.add([
       k.rect(48, mapHeight + 600),
       k.pos(-48, -300),
@@ -321,7 +327,7 @@ export function initDungeonGreen(k) {
       "wall"
     ]);
 
-    // --- Vertical Moving Platform (Zero-Allocation Performance) ---
+    // --- Plataforma móvil vertical ---
     const movingPlat = k.add([
       k.sprite("wood_platform"),
       k.pos(movingPlatX, movingPlatY),
@@ -342,7 +348,7 @@ export function initDungeonGreen(k) {
       movingPlat.pos.y = movingPlat.baseY + Math.sin(k.time() * 2) * 45;
       movingPlat.deltaY = movingPlat.pos.y - prevY;
 
-      // Drag player if standing on the platform (fast check without bbox allocations)
+      // Arrastra al jugador cuando está apoyado sobre la plataforma
       if (player && player.isGrounded()) {
         const platWidth = tileSize * (tileSize / 16);
         const isStanding =
@@ -356,7 +362,7 @@ export function initDungeonGreen(k) {
       }
     });
 
-    // Animated glowing label above Return Portal
+    // Etiqueta animada sobre el portal de retorno
     const portalLabel = k.add([
       k.text("RETORNO", { font: "pressstart", size: 8 }),
       k.pos(38 * tileSize + 12, 3 * tileSize - 10),
@@ -368,14 +374,14 @@ export function initDungeonGreen(k) {
       portalLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
-    // --- Secret Sanctuary Portal (Only spawned if all Level 1 flower vases were destroyed) ---
+    // --- Portal secreto del Santuario (solo aparece si se destruyeron todos los jarrones del Nivel 1) ---
     if (gameState.allVasesDestroyed) {
       const doorCol = 3;
       const doorRow = 2;
       const doorX = doorCol * tileSize;
       const doorY = doorRow * tileSize;
 
-      // Platform under the secret door (cols 2, 3, 4 at row 3)
+      // Plataforma bajo la puerta secreta (cols 2, 3, 4 en la fila 3)
       for (let c = 2; c <= 4; c++) {
         k.add([
           k.sprite("wood_platform"),
@@ -422,15 +428,15 @@ export function initDungeonGreen(k) {
       });
     }
 
-    // Spawn player
+    // Aparición del jugador
     player = createPlayer(k, playerSpawnX, playerSpawnY, true);
 
-    // Initialize HUD
+    // Inicializa el HUD
     createHUD(k, "Cámara Esmeralda");
 
-    // --- Interactive Collisions & Triggers ---
+    // --- Colisiones y disparadores interactivos ---
 
-    // 1. Coins & Collectibles
+    // 1. Monedas y coleccionables
     player.onCollide("coin", (coin) => {
       coin.destroy();
       k.play("coin");
@@ -445,7 +451,7 @@ export function initDungeonGreen(k) {
       showPopup(gem.pos, "+250", k.rgb(120, 255, 180));
     });
 
-    // 2. Hazards & Springs
+    // 2. Peligros y trampolines
     player.onCollide("spikes", () => {
       player.receiveDamage(0);
     });
@@ -460,7 +466,7 @@ export function initDungeonGreen(k) {
       });
     });
 
-    // 3. Enemy Interaction (Stomp vs Shield Block vs Lateral Hit)
+    // 3. Interacción con enemigos (pisotón vs daño lateral)
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || player.isHurt) return;
 
@@ -479,7 +485,7 @@ export function initDungeonGreen(k) {
       }
     });
 
-    // 4. Return Portal Transition back to Level 2
+    // 4. Transición del portal de retorno al Nivel 2
     let returned = false;
     player.onCollide("return_portal", () => {
       if (returned) return;
@@ -518,14 +524,14 @@ export function initDungeonGreen(k) {
       ]);
 
       k.wait(2.8, () => {
-        // Return to Level 2 with key reset so player can search for the true book
+        // Vuelve al Nivel 2 reiniciando la llave para buscar el libro verdadero
         gameState.hasKey = false;
         gameState.collectedBook = null;
         k.go("level2");
       });
     });
 
-    // 5. Secret Sanctuary Portal Transition
+    // 5. Transición por el portal secreto hacia el Santuario Ancestral
     let enteredSanctuary = false;
     player.onCollide("secret_sanctuary_door", () => {
       if (enteredSanctuary) return;
@@ -565,20 +571,20 @@ export function initDungeonGreen(k) {
       });
     });
 
-    // --- Main Update Loop ---
+    // --- Bucle principal de actualización ---
     k.onUpdate(() => {
       if (!player) return;
 
-      // Clamping within map lateral bounds
+      // Límites laterales dentro del mapa
       if (player.pos.x < 10) player.pos.x = 10;
       else if (player.pos.x > mapWidth - 10) player.pos.x = mapWidth - 10;
 
-      // Instant fatal death if falling into the bottomless pit (gap at col 9-11)
+      // Muerte instantánea al caer al foso sin fondo (hueco en cols 9-11)
       if (player.pos.y > mapHeight + 50 && !player.isDead) {
         player.die();
       }
 
-      // Smooth horizontal camera tracking
+      // Seguimiento horizontal suave de la cámara
       const targetCamX = Math.max(k.width() / 2, Math.min(player.pos.x, mapWidth - k.width() / 2));
       k.camPos(targetCamX, k.height() / 2);
     });

@@ -4,17 +4,17 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Secret Easter Egg: "You Shouldn't Be Here!" (The Crimson Void)
- * 
- * Features & Lore:
- * - Hidden nightmare realm accessed exclusively through the secret door in Dungeon Red.
- * - Eerie real-world photo background with atmospheric crimson vignette.
- * - Prominent pulsing message: "You Should'nt be here!".
- * - 3 terrifying Blood Monsters (10 HP each) patrolling the arena.
- * - Aerial trampolines and multi-tier balconies for evasion and critical stomps.
- * - Defeating all 3 Blood Monsters spawns the Escape Portal with +2000 victory bonus!
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Escena secreta (Easter Egg): "You Shouldn't Be Here!" (El Vacío Carmesí).
+ *
+ * Características y ambientación:
+ * - Reino oculto de pesadilla accesible únicamente mediante la puerta secreta de la Mazmorra Roja.
+ * - Fondo fotográfico inquietante con viñeta carmesí atmosférica.
+ * - Mensaje parpadeante destacado: "You Should'nt be here!".
+ * - 3 temibles Blood Monsters (10 PV cada uno) patrullando la arena.
+ * - Trampolines aéreos y balcones en múltiples niveles para esquivar y ejecutar pisotones críticos.
+ * - Al derrotar a los 3 Blood Monsters aparece el portal de escape con un bono de +2000 pts.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initEasterEggCreep(k) {
   k.scene("easteregg_creep", () => {
@@ -27,7 +27,7 @@ export function initEasterEggCreep(k) {
     const mapWidth = cols * tileSize;  // 672 px
     const mapHeight = rows * tileSize; // 360 px
 
-    // --- Eerie Real-World Photo Background ---
+    // --- Fondo fotográfico inquietante ---
     k.add([
       k.sprite("bg_easteregg_face"),
       k.pos(0, 0),
@@ -36,7 +36,7 @@ export function initEasterEggCreep(k) {
       k.z(-10)
     ]);
 
-    // Ominous deep blood-crimson vignette overlay
+    // Viñeta oscura en tono rojo sangre
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -46,7 +46,7 @@ export function initEasterEggCreep(k) {
       k.z(-8)
     ]);
 
-    // --- Prominent Eerie Warning Text ---
+    // --- Texto de advertencia inquietante ---
     const warningText = k.add([
       k.text("You Should'nt be here!", {
         font: "pressstart",
@@ -59,28 +59,28 @@ export function initEasterEggCreep(k) {
       k.z(90)
     ]);
 
-    // Ominous eerie pulsing wave
+    // Pulso inquietante de opacidad
     warningText.onUpdate(() => {
       warningText.opacity = k.wave(0.65, 1, k.time() * 3.5);
     });
 
-    // Arena Layout: 28 cols x 15 rows
+    // Diseño de la arena: 28 columnas x 15 filas
     const layout = [
       "##                        ##", // 0
       "##                        ##", // 1
-      "##  ---              ---  ##", // 2 High balconies with Gems & Hearts
+      "##  ---              ---  ##", // 2 Balcones altos con gemas y corazones
       "##                        ##", // 3
       "##   T                T   ##", // 4 Trampolines
-      "##  ===              ===  ##", // 5 Mid balconies (Monster 1 & 3)
+      "##  ===              ===  ##", // 5 Balcones medios (Monstruos 1 y 3)
       "##                        ##", // 6
-      "##       ---    ---       ##", // 7 Stepping platforms
+      "##       ---    ---       ##", // 7 Plataformas intermedias
       "##                        ##", // 8
-      "##  ===              ===  ##", // 9 Side approach ledges
+      "##  ===              ===  ##", // 9 Cornisas laterales de acceso
       "##                        ##", // 10
-      "##  ^^^^            ^^^^  ##", // 11 Lateral hazard spikes
-      "##========================##", // 12 Main Arena Floor (y = 288)
-      "############################", // 13 Foundation Bedrock
-      "############################"  // 14 Base
+      "##  ^^^^            ^^^^  ##", // 11 Pinchos laterales de peligro
+      "##========================##", // 12 Suelo principal de la arena (y = 288)
+      "############################", // 13 Base sólida
+      "############################"  // 14 Cimiento
     ];
 
     const visualCols = Array.from({ length: cols }, () => []);
@@ -88,7 +88,7 @@ export function initEasterEggCreep(k) {
     const wallSegments = [];
     const platformSegments = [];
 
-    // Parse layout
+    // Análisis del mapa por filas y columnas
     for (let row = 0; row < rows; row++) {
       const line = layout[row];
       let col = 0;
@@ -154,8 +154,8 @@ export function initEasterEggCreep(k) {
       }
     }
 
-    // Add high balcony bonus items
-    // Hearts on top balconies
+    // Objetos de bonificación en los balcones altos
+    // Corazones en los balcones superiores
     k.add([
       k.sprite("heart_full"),
       k.pos(3 * tileSize + 4, 1 * tileSize + 4),
@@ -173,7 +173,7 @@ export function initEasterEggCreep(k) {
       "heart_item"
     ]);
 
-    // Gems in center
+    // Gemas en la zona central
     k.add([
       k.sprite("gem"),
       k.pos(11 * tileSize + 4, 6 * tileSize + 4),
@@ -191,7 +191,7 @@ export function initEasterEggCreep(k) {
       "gem"
     ]);
 
-    // --- Dedicated Frustum-Culled Tilemap Renderer ---
+    // --- Renderizador de tilemap con recorte por frustum de cámara ---
     const tilemap = k.add([k.z(1)]);
     const tileScale = k.vec2(tileSize / 16, tileSize / 16);
 
@@ -213,9 +213,9 @@ export function initEasterEggCreep(k) {
       }
     });
 
-    // --- Consolidated Static Colliders ---
+    // --- Colisionadores estáticos consolidados ---
 
-    // 1. Continuous Ground Colliders (Extends 120px deep on row 12)
+    // 1. Colisionadores continuos de suelo (se extienden 120 px hacia abajo en la fila 12)
     for (const seg of groundSegments) {
       const height = seg.row >= 12 ? 120 : tileSize;
       k.add([
@@ -229,7 +229,7 @@ export function initEasterEggCreep(k) {
       ]);
     }
 
-    // 2. Wall Colliders
+    // 2. Colisionadores de muros
     for (const seg of wallSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -242,7 +242,7 @@ export function initEasterEggCreep(k) {
       ]);
     }
 
-    // 3. Platform Colliders
+    // 3. Colisionadores de plataformas
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -255,7 +255,7 @@ export function initEasterEggCreep(k) {
       ]);
     }
 
-    // 4. Map Boundaries (Lateral Walls)
+    // 4. Límites laterales del mapa
     k.add([
       k.rect(48, mapHeight),
       k.pos(0, 0),
@@ -276,16 +276,16 @@ export function initEasterEggCreep(k) {
       "wall"
     ]);
 
-    // Initialize HUD
+    // Inicializa el HUD
     createHUD(k, "DIMENSIÓN SECRETA");
 
-    // Spawn Mili at the left entrance of the arena floor
+    // Aparición de Mili en la entrada izquierda del suelo de la arena
     const player = createPlayer(k, 80, 260, true, 400);
 
-    // --- Spawn 3 Blood Monsters (10 HP each) ---
+    // --- Aparición de 3 Blood Monsters (10 PV cada uno) ---
     let monstersRemaining = 3;
 
-    // Remaining Monsters Status HUD
+    // Indicador en HUD de monstruos restantes
     const statusLabel = k.add([
       k.text(`BLOOD MONSTERS: ${monstersRemaining}/3`, {
         font: "pressstart",
@@ -298,26 +298,35 @@ export function initEasterEggCreep(k) {
       k.z(91)
     ]);
 
+    /**
+     * Actualiza el contador de Blood Monsters restantes y activa el portal al eliminarlos todos.
+     */
     function onMonsterDefeated() {
       monstersRemaining = Math.max(0, monstersRemaining - 1);
       statusLabel.text = `BLOOD MONSTERS: ${monstersRemaining}/3`;
 
-      // Check if all 3 Blood Monsters are defeated!
+      // Verifica si los 3 Blood Monsters han sido derrotados
       if (monstersRemaining === 0) {
         onAllMonstersDefeated();
       }
     }
 
-    // Monster 1: Left Mid Balcony
+    // Monstruo 1: balcón medio izquierdo
     createBloodMonster(k, 100, 100, 35, onMonsterDefeated);
 
-    // Monster 2: Center Arena Floor
+    // Monstruo 2: centro del suelo de la arena
     createBloodMonster(k, 336, 265, 80, onMonsterDefeated);
 
-    // Monster 3: Right Mid Balcony
+    // Monstruo 3: balcón medio derecho
     createBloodMonster(k, 570, 100, 35, onMonsterDefeated);
 
-    // Helper for floating text notifications
+    /**
+     * Muestra un texto flotante ascendente con desvanecimiento.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 100)) {
       const pop = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -333,7 +342,7 @@ export function initEasterEggCreep(k) {
       });
     }
 
-    // --- Interactive Collisions & Triggers ---
+    // --- Colisiones y disparadores interactivos ---
     player.onCollide("gem", (gem) => {
       gem.destroy();
       gameState.addScore(300);
@@ -353,7 +362,7 @@ export function initEasterEggCreep(k) {
       k.play("win");
     });
 
-    // Trampolines (Super jump to reach balconies and stomp the beasts)
+    // Trampolines (supersalto para alcanzar balcones y pisar a las bestias)
     player.onCollide("spring", (spr) => {
       k.play("spring");
       player.jump(player.jumpForce * 1.5);
@@ -368,7 +377,7 @@ export function initEasterEggCreep(k) {
       player.receiveDamage(0);
     });
 
-    // Combat with Blood Monsters
+    // Combate contra los Blood Monsters
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || enemy.isHurt) return;
 
@@ -377,7 +386,7 @@ export function initEasterEggCreep(k) {
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
 
       if (isStomping) {
-        // Stomp deals 2 critical damage to the 10 HP monster
+        // El pisotón inflige 2 de daño crítico al monstruo de 10 PV
         enemy.takeDamage(2, player.pos.x);
         player.jump(player.jumpForce * 0.85);
         player.hasDoubleJumped = false;
@@ -395,13 +404,16 @@ export function initEasterEggCreep(k) {
       player.receiveDamage(knockDir);
     });
 
-    // --- Sequence when all 3 Blood Monsters are destroyed ---
+    /**
+     * Secuencia de victoria al derrotar a los 3 Blood Monsters: otorga +2000 pts
+     * y genera el portal de escape en el centro de la arena.
+     */
     function onAllMonstersDefeated() {
       k.play("win");
       k.shake(12);
       gameState.addScore(2000);
 
-      // Grand Escape Banner
+      // Cartel principal de escape
       k.add([
         k.rect(520, 70),
         k.pos(k.width() / 2, k.height() / 2 - 20),
@@ -436,7 +448,7 @@ export function initEasterEggCreep(k) {
         k.z(151)
       ]);
 
-      // Spawn the Golden Escape Portal in the center of the arena floor (col 13, row 11)
+      // Genera el portal dorado de escape en el centro del suelo (col 13, fila 11)
       const escapePortal = k.add([
         k.sprite("door_open"),
         k.pos(13 * tileSize + 12, 12 * tileSize),
@@ -459,7 +471,7 @@ export function initEasterEggCreep(k) {
       });
     }
 
-    // Escape door collision
+    // Colisión con el portal de escape
     let escaping = false;
     player.onCollide("secret_escape_door", () => {
       if (escaping) return;
@@ -467,12 +479,12 @@ export function initEasterEggCreep(k) {
       k.play("win");
 
       k.wait(1.5, () => {
-        // Return player triumphantly to Dungeon Red
+        // Regresa triunfante a la Mazmorra Roja
         k.go("dungeon_red");
       });
     });
 
-    // Arena lateral clamp
+    // Límite lateral de la arena para el jugador
     k.onUpdate(() => {
       if (!player) return;
       if (player.pos.x < 55) {

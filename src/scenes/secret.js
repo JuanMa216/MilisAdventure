@@ -3,33 +3,34 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Secret Easter Egg Scene: "El Origen de la Leyenda"
- * 
- * Unlocked only if the player finishes Level 3 with score >= secretScoreThreshold (5000+ pts).
- * Features:
- * - Nostalgic background image (user photo).
- * - Celebratory golden playground with coins, gems, and trampolines.
- * - Interactive bouncy basketball & mini-hoop interaction.
- * - Golden Trophy exit to True 100% Victory screen.
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Escena secreta (Easter Egg): "El Origen de la Leyenda".
+ *
+ * Se desbloquea únicamente si el jugador completa el Nivel 3 con una puntuación
+ * mayor o igual a `secretScoreThreshold` (5000+ pts).
+ * Incluye:
+ * - Imagen de fondo nostálgica.
+ * - Área de juego dorada con monedas, gemas y trampolines.
+ * - Balón de baloncesto interactivo con rebote y aro para encestar.
+ * - Trofeo dorado de salida hacia la victoria suprema del 100%.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initSecret(k) {
   k.scene("secret", () => {
     k.camPos(k.width() / 2, k.height() / 2);
     k.play("win");
 
-    // 1. Photo Background (fitted cleanly across 640x360 canvas)
+    // 1. Fondo fotográfico (ajustado al lienzo de 640x360)
     k.add([
       k.sprite("bg_secret"),
       k.pos(k.width() / 2, 0),
       k.anchor("top"),
-      k.scale(k.width() / 720), // 640/720 = 0.8889 -> exactly 640w x 480h
+      k.scale(k.width() / 720), // 640/720 = 0.8889 -> exactamente 640x480
       k.fixed(),
       k.z(-10)
     ]);
 
-    // Soft dark contrast overlay so platforms, Mili, and text stand out clearly
+    // Superposición oscura suave para resaltar plataformas, personaje y texto
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -39,7 +40,7 @@ export function initSecret(k) {
       k.z(-5)
     ]);
 
-    // 2. Celebratory Top Banners
+    // 2. Carteles superiores de celebración
     k.add([
       k.text("★ ¡NIVEL SECRETO: EL ORIGEN DE LA LEYENDA! ★", {
         font: "pressstart",
@@ -67,11 +68,11 @@ export function initSecret(k) {
       subBanner.color = subBanner.color.r === 200 ? k.rgb(255, 180, 220) : k.rgb(200, 245, 255);
     });
 
-    // 3. Ground and Floating Platforms
+    // 3. Suelo y plataformas flotantes
     const tileSize = 24;
     const floorY = 320;
 
-    // Solid floor at the bottom
+    // Suelo sólido en la parte inferior
     for (let c = 0; c < 27; c++) {
       k.add([
         k.sprite("stone_top"),
@@ -84,7 +85,7 @@ export function initSecret(k) {
       ]);
     }
 
-    // Solid foundation bedrock under floor to prevent physics tunneling
+    // Base sólida bajo el suelo para evitar atravesar la física
     k.add([
       k.rect(27 * tileSize, 100),
       k.pos(0, floorY + 24),
@@ -94,7 +95,7 @@ export function initSecret(k) {
       "solid"
     ]);
 
-    // Left and Right Invisible Walls
+    // Muros invisibles izquierdo y derecho
     k.add([
       k.rect(12, 360),
       k.pos(-12, 0),
@@ -110,13 +111,13 @@ export function initSecret(k) {
       "solid"
     ]);
 
-    // Stepping platforms leading up to the hoop and trophy
+    // Plataformas escalonadas hacia el aro y el trofeo
     const platformDefs = [
-      // Left approach to basket
+      // Acceso izquierdo hacia la canasta
       { x: 5 * tileSize, y: 250, w: 3 },
       { x: 9 * tileSize, y: 190, w: 3 },
-      { x: 13 * tileSize, y: 140, w: 4 }, // Hoop observation platform
-      // Right approach to trophy
+      { x: 13 * tileSize, y: 140, w: 4 }, // Plataforma de observación del aro
+      // Acceso derecho hacia el trofeo
       { x: 18 * tileSize, y: 200, w: 3 },
       { x: 22 * tileSize, y: 250, w: 3 }
     ];
@@ -136,7 +137,7 @@ export function initSecret(k) {
       }
     }
 
-    // 4. Spring Trampolines (Super jump boosters!)
+    // 4. Trampolines de resorte (impulso de supersalto)
     const trampolines = [
       { x: 3 * tileSize, y: floorY - 14 },
       { x: 17 * tileSize, y: floorY - 14 }
@@ -153,13 +154,13 @@ export function initSecret(k) {
       ]);
     }
 
-    // 5. Golden Coins scattered in celebratory arches
+    // 5. Monedas doradas dispuestas en arcos celebratorios
     const coinCoords = [
-      // Arch 1 over trampoline 1
+      // Arco 1 sobre el trampolín 1
       [2, 280], [3, 240], [4, 210], [5, 210],
-      // Arch 2 over platform to hoop
+      // Arco 2 sobre la plataforma hacia el aro
       [8, 150], [9, 140], [10, 140], [11, 110], [12, 95], [13, 95], [14, 105],
-      // Arch 3 descending to right
+      // Arco 3 descendiendo hacia la derecha
       [16, 170], [17, 160], [18, 160], [19, 160], [21, 210], [22, 210], [23, 220]
     ];
 
@@ -174,7 +175,7 @@ export function initSecret(k) {
       ]);
     }
 
-    // 6. Sparkling Royal Gems (+250 pts each)
+    // 6. Gemas reales brillantes (+250 pts cada una)
     const gemCoords = [
       [9 * tileSize + 4, 160],
       [14 * tileSize + 4, 110],
@@ -191,8 +192,8 @@ export function initSecret(k) {
       ]);
     }
 
-    // 7. Interactive Basketball & Hoop Zone!
-    // Mini-hoop sensor (aligns with basketball hoop on the photo around x=285, y=70)
+    // 7. Zona interactiva del balón y aro de baloncesto
+    // Sensor del aro (alineado con el aro de la fotografía cerca de x=285, y=78)
     const hoopSensor = k.add([
       k.rect(36, 10),
       k.pos(285, 78),
@@ -203,6 +204,11 @@ export function initSecret(k) {
     ]);
 
     let basketScored = false;
+    /**
+     * Otorga el bono único por encestar en el aro y muestra el aviso flotante.
+     *
+     * @param {number} byX - Coordenada X desde donde se activó la canasta
+     */
     const triggerBasket = (byX) => {
       if (basketScored) return;
       basketScored = true;
@@ -226,7 +232,7 @@ export function initSecret(k) {
       k.wait(2.5, () => scoreBanner.destroy());
     };
 
-    // Bouncy Basketball Entity
+    // Entidad del balón de baloncesto con rebote
     const ball = k.add([
       k.circle(10),
       k.pos(140, floorY - 30),
@@ -242,7 +248,7 @@ export function initSecret(k) {
       }
     ]);
 
-    // Ball physics and hoop collision
+    // Física horizontal del balón y colisión con el aro
     ball.onUpdate(() => {
       if (Math.abs(ball.velX) > 0.5) {
         ball.move(ball.velX, 0);
@@ -261,7 +267,7 @@ export function initSecret(k) {
       triggerBasket(ball.pos.x);
     });
 
-    // 8. Golden Victory Trophy (Exit to True Victory)
+    // 8. Trofeo dorado de victoria (salida hacia la victoria definitiva)
     const trophy = k.add([
       k.sprite("door_closed"),
       k.pos(23 * tileSize, floorY - 32),
@@ -271,7 +277,7 @@ export function initSecret(k) {
       "trophy_door"
     ]);
 
-    // Floating banner above trophy
+    // Etiqueta flotante sobre el trofeo
     const trophyLabel = k.add([
       k.text("¡COPA SUPREMA!", { font: "pressstart", size: 6 }),
       k.pos(23 * tileSize + 12, floorY - 44),
@@ -283,17 +289,17 @@ export function initSecret(k) {
       trophyLabel.pos.y = (floorY - 44) + Math.sin(k.time() * 4) * 3;
     });
 
-    // 9. Mili Player Entity (spawn flush on ground)
+    // 9. Jugadora Mili (aparece apoyada sobre el suelo)
     const player = createPlayer(k, 40, floorY - 14, true, 420);
 
-    // Bounce Mili high on spring trampolines
+    // Impulso alto de Mili al pisar los trampolines
     player.onCollide("spring_secret", () => {
       k.play("jump");
-      player.jump(520); // Super jump high into the basketball court
+      player.jump(520); // Supersalto hacia la zona del aro
       k.shake(3);
     });
 
-    // Mili interacting with the basketball (kick / launch)
+    // Interacción de Mili al patear o empujar el balón
     player.onCollide("basketball", (b) => {
       const launchDir = player.pos.x < b.pos.x ? 1 : -1;
       b.velX = launchDir * 180;
@@ -301,7 +307,7 @@ export function initSecret(k) {
       k.play("hit");
     });
 
-    // Sword melee attack launches the basketball
+    // El golpe cuerpo a cuerpo con espada lanza el balón con fuerza
     player.onCollide("sword_hitbox", () => {});
     k.onCollide("sword_hitbox", "basketball", (hitbox, b) => {
       const launchDir = player.facing === "right" ? 1 : -1;
@@ -311,26 +317,26 @@ export function initSecret(k) {
       k.shake(4);
     });
 
-    // If Mili herself jumps through the hoop
+    // Si Mili misma salta atravesando el aro
     player.onCollide("hoop_target", () => {
       triggerBasket(player.pos.x);
     });
 
-    // Coin collection (+100)
+    // Recolección de monedas (+100)
     player.onCollide("secret_coin", (c) => {
       k.play("coin");
       c.destroy();
       gameState.addScore(100);
     });
 
-    // Gem collection (+250)
+    // Recolección de gemas (+250)
     player.onCollide("secret_gem", (g) => {
       k.play("coin");
       g.destroy();
       gameState.addScore(250);
     });
 
-    // Reaching Trophy -> Grand Finale!
+    // Al alcanzar el trofeo -> Gran Final
     let finishing = false;
     player.onCollide("trophy_door", () => {
       if (finishing) return;
@@ -356,7 +362,7 @@ export function initSecret(k) {
       });
     });
 
-    // 10. Persistent HUD
+    // 10. HUD persistente
     createHUD(k, "NIVEL SECRETO: EASTER EGG");
   });
 }

@@ -1,17 +1,17 @@
 import { gameState } from "../state.js";
 
 /**
- * Credits Scene.
- * Displays smooth scrolling end credits featuring creators, beta testers,
- * and sprite/asset authors, with speed-up and replay controls.
+ * Escena de Créditos Finales.
+ * Muestra los créditos con desplazamiento vertical suave, incluyendo creadores,
+ * beta testers y autores de sprites/assets, junto con controles de aceleración y reinicio.
  *
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initCredits(k) {
   k.scene("credits", () => {
     k.camPos(k.width() / 2, k.height() / 2);
 
-    // Atmospheric backdrop
+    // Fondo atmosférico
     k.add([
       k.sprite("bg_level1"),
       k.pos(0, 0),
@@ -20,7 +20,7 @@ export function initCredits(k) {
       k.z(-10)
     ]);
 
-    // Deep midnight overlay for high text legibility
+    // Superposición oscura nocturna para garantizar alta legibilidad del texto
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -30,7 +30,7 @@ export function initCredits(k) {
       k.z(-5)
     ]);
 
-    // Subtle twinkling stars in the background
+    // Estrellas sutiles parpadeando en el fondo
     for (let i = 0; i < 28; i++) {
       const star = k.add([
         k.rect(2, 2),
@@ -49,7 +49,7 @@ export function initCredits(k) {
       });
     }
 
-    // Scrolling container
+    // Contenedor desplazable de los créditos
     const scrollContainer = k.add([
       k.pos(k.width() / 2, k.height() + 30),
       k.z(10)
@@ -57,6 +57,12 @@ export function initCredits(k) {
 
     let cursorY = 0;
 
+    /**
+     * Agrega una línea de texto centrada al contenedor desplazable y avanza el cursor vertical.
+     *
+     * @param {string} text - Texto a mostrar
+     * @param {{ size?: number, color?: import("kaboom").Color, gap?: number }} [options] - Opciones de formato y espaciado
+     */
     function addLine(text, { size = 8, color = k.rgb(230, 235, 245), gap = 20 } = {}) {
       scrollContainer.add([
         k.text(text, { font: "pressstart", size }),
@@ -67,6 +73,12 @@ export function initCredits(k) {
       cursorY += gap;
     }
 
+    /**
+     * Agrega un encabezado de sección con línea divisoria superior en los créditos.
+     *
+     * @param {string} title - Título de la sección
+     * @param {import("kaboom").Color} [color] - Color del título y divisor
+     */
     function addSection(title, color = k.rgb(255, 220, 90)) {
       cursorY += 14;
       scrollContainer.add([
@@ -79,11 +91,11 @@ export function initCredits(k) {
       addLine(title, { size: 10, color, gap: 26 });
     }
 
-    // --- Credits Content ---
+    // --- Contenido de los Créditos ---
     addLine("MILI'S ADVENTURE", { size: 18, color: k.rgb(255, 220, 80), gap: 26 });
     addLine("CRÉDITOS FINALES", { size: 9, color: k.rgb(160, 220, 255), gap: 38 });
 
-    // Creators
+    // Creadores
     addSection("CREADORES DEL JUEGO", k.rgb(255, 215, 80));
     addLine("Juan Manuel Rojas Muñoz", { size: 9, color: k.rgb(245, 245, 255), gap: 22 });
     addLine("Nohora Camila Cardozo Cardenas", { size: 9, color: k.rgb(245, 245, 255), gap: 34 });
@@ -93,7 +105,7 @@ export function initCredits(k) {
     addLine("Juan Jose Galvez", { size: 9, color: k.rgb(230, 245, 240), gap: 22 });
     addLine("Brahian Castro", { size: 9, color: k.rgb(230, 245, 240), gap: 34 });
 
-    // Sprite & Asset Authors
+    // Autores de sprites y recursos visuales
     addSection("AUTORES DE SPRITES Y ASSETS", k.rgb(180, 170, 255));
     addLine("https://zerie.itch.io/", { size: 7.5, color: k.rgb(210, 225, 255), gap: 20 });
     addLine("https://clockworkraven.itch.io/", { size: 7.5, color: k.rgb(210, 225, 255), gap: 20 });
@@ -101,7 +113,7 @@ export function initCredits(k) {
     addLine("https://brackeysgames.itch.io/", { size: 7.5, color: k.rgb(210, 225, 255), gap: 20 });
     addLine("https://deepdivegamestudio.itch.io/", { size: 7.5, color: k.rgb(210, 225, 255), gap: 38 });
 
-    // Closing tribute
+    // Homenaje de cierre y puntuación final
     addSection("¡GRACIAS POR JUGAR!", k.rgb(255, 190, 120));
     addLine(`PUNTUACIÓN FINAL: ${String(gameState.score).padStart(5, "0")}`, {
       size: 9,
@@ -109,7 +121,7 @@ export function initCredits(k) {
       gap: 32
     });
 
-    // Celebrating Mili sprite at the end of the scroll
+    // Sprite de Mili celebrando al final del desplazamiento
     scrollContainer.add([
       k.sprite("player", { anim: "idle" }),
       k.pos(0, cursorY + 14),
@@ -118,7 +130,7 @@ export function initCredits(k) {
     ]);
     cursorY += 56;
 
-    // Final prompt that settles in the center when scroll completes
+    // Mensaje final que queda centrado al terminar el desplazamiento
     const endBannerY = cursorY;
     const endPrompt = scrollContainer.add([
       k.text("Presiona ESPACIO o ENTER para volver a jugar", {
@@ -130,7 +142,7 @@ export function initCredits(k) {
       k.color(230, 235, 255)
     ]);
 
-    // Fixed bottom helper bar
+    // Barra inferior fija con atajos de control
     k.add([
       k.rect(k.width(), 22),
       k.pos(0, k.height() - 22),
@@ -152,7 +164,7 @@ export function initCredits(k) {
       k.z(51)
     ]);
 
-    // Stop scrolling once the final prompt reaches the lower-center of the screen
+    // Detiene el desplazamiento cuando el mensaje final alcanza la zona inferior-central
     const stopTargetY = k.height() * 0.72 - endBannerY;
     let scrollFinished = false;
 
@@ -170,14 +182,16 @@ export function initCredits(k) {
       }
     });
 
-    // Pulse final prompt once scroll finishes
+    // Efecto de parpadeo en el mensaje final una vez terminados los créditos
     k.loop(0.6, () => {
       if (scrollFinished) {
         endPrompt.opacity = endPrompt.opacity === 1 ? 0.35 : 1;
       }
     });
 
-    // Restart controls
+    /**
+     * Reinicia el estado global del juego y vuelve al Nivel 1.
+     */
     function restartGame() {
       gameState.reset();
       k.go("level1");

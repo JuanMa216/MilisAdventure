@@ -1,21 +1,21 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes a Skeleton Warrior enemy for Level 3 (The Tower).
+ * Crea e inicializa un enemigo Guerrero Esqueleto para el Nivel 3 (La Torre).
  * 
- * Features:
- * - 2 HP undead warrior wielding an ancient bone sword.
- * - State machine: PATROL, ALERT, CHASE, ATTACK, HURT, DIE.
- * - Slashes forward with sword when player enters melee range.
- * - Can be blocked with Mili's Shield (Shift/C) or struck with sword.
- * - Stomp deals 2 critical damage (instant crush).
- * - Fast O(1) player tracking without scene tree allocations.
+ * Características:
+ * - Guerrero no-muerto de 2 HP armado con una espada de hueso antigua.
+ * - Máquina de estados: PATROL, ALERT, CHASE, ATTACK, HURT, DIE.
+ * - Lanza estocadas hacia adelante cuando el jugador entra en rango cuerpo a cuerpo.
+ * - Puede bloquearse con el Escudo de Mili (Shift/C) o atacarse con la espada.
+ * - El pisotón aéreo inflige 2 de daño crítico (aplastamiento instantáneo).
+ * - Seguimiento rápido del jugador en O(1) sin asignaciones en el árbol de escena.
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - Initial X coordinate
- * @param {number} y - Initial Y coordinate
- * @param {number} patrolRange - Max distance to wander left/right
- * @returns {import("kaboom").GameObj} The skeleton game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} patrolRange - Distancia máxima de patrulla hacia izquierda/derecha
+ * @returns {import("kaboom").GameObj} Objeto de juego del esqueleto
  */
 export function createSkeleton(k, x, y, patrolRange = 60) {
   let dir = -1;
@@ -31,9 +31,9 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
   const skeleton = k.add([
     k.sprite("skeleton_base", { anim: "walk" }),
     k.pos(x, y),
-    // Scale skeleton to match 24px tile scale (around 25px visual height)
+    // Escala el esqueleto para encajar con bloques de 24px (altura visual ~25px)
     k.scale(0.95),
-    // Hitbox aligned to feet (frame is 64x64, center is (32, 32))
+    // Hitbox alineado con los pies (cuadro 64x64, centro en (32, 32))
     k.area({ shape: new k.Rect(k.vec2(1, 2), 16, 26) }),
     k.body({ maxVelocity: 350 }),
     k.anchor("center"),
@@ -47,7 +47,11 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
       isDead: false,
       isHurt: false,
 
-      // Take damage from player melee attacks
+      /**
+       * Aplica daño al esqueleto por ataques cuerpo a cuerpo o pisotones del jugador.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Coordenada X del atacante para calcular el retroceso
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp -= dmg;
@@ -65,15 +69,15 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
           this.state = "hurt";
           this.play("hurt");
 
-          // Knockback
+          // Retroceso físico
           const knockDir = this.pos.x >= fromX ? 1 : -1;
           this.jump(110);
           this.move(knockDir * 90, 0);
 
-          // Bone white flash feedback
+          // Destello de impacto
           this.color = k.rgb(255, 120, 120);
 
-          // Damage indicator popup
+          // Indicador flotante de daño
           const dmgPopup = k.add([
             k.text(`-${dmg}`, { font: "pressstart", size: 8 }),
             k.pos(this.pos.x, this.pos.y - 18),
@@ -95,7 +99,9 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         }
       },
 
-      // Defeat sequence
+      /**
+       * Ejecuta la secuencia de derrota del esqueleto y otorga +250 puntos.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -108,7 +114,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         k.play("hit");
         gameState.addScore(250);
 
-        // Score award popup
+        // Texto flotante de puntuación (+250)
         const scorePopup = k.add([
           k.text("+250", { font: "pressstart", size: 8 }),
           k.pos(this.pos.x, this.pos.y - 18),
@@ -122,7 +128,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         k.wait(0.7, () => scorePopup.destroy());
 
         this.play("die");
-        // Safely ignore all collisions without deleting component data
+        // Ignora todas las colisiones de forma segura sin eliminar componentes
         this.collisionIgnore = ["*"];
 
         k.wait(0.7, () => {
@@ -132,7 +138,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
     }
   ]);
 
-  // Shows an "!" alert balloon over the skeleton when spotting player
+  // Muestra un globo de alerta "!" sobre el esqueleto al detectar al jugador
   function showAlertBubble() {
     const alertBox = k.add([
       k.rect(14, 14, { radius: 3 }),
@@ -162,11 +168,11 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
     });
   }
 
-  // Skeleton AI State Machine Update Loop
+  // Bucle de actualización de la máquina de estados del esqueleto
   skeleton.onUpdate(() => {
     if (skeleton.isDead) return;
 
-    // Safety: clamp falling speed to prevent physics tunneling
+    // Seguridad: limita la velocidad de caída para evitar atravesar plataformas
     if (skeleton.vel && skeleton.vel.y > 350) {
       skeleton.vel.y = 350;
     }
@@ -176,7 +182,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
       attackCooldown -= dt;
     }
 
-    // Fast O(1) player lookup
+    // Búsqueda rápida del jugador en O(1)
     const player = gameState.player || k.get("player")[0];
     let dx = 0;
     let dy = 0;
@@ -196,7 +202,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
       Math.abs(dy) <= 50;
 
     switch (skeleton.state) {
-      // 1. PATROL: Wander platform back and forth
+      // 1. PATRULLA: Recorre la plataforma de un lado a otro
       case "patrol": {
         skeleton.move(patrolSpeed * dir, 0);
         skeleton.flipX = dir < 0;
@@ -205,7 +211,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
           skeleton.play("walk");
         }
 
-        // Boundary turnaround
+        // Giro al alcanzar los límites de patrulla
         if (skeleton.pos.x < startX - patrolRange) {
           dir = 1;
         } else if (skeleton.pos.x > startX + patrolRange) {
@@ -225,7 +231,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         break;
       }
 
-      // 2. ALERT: Brief pause before charging
+      // 2. ALERTA: Breve pausa antes de lanzarse a perseguir
       case "alert": {
         if (player) {
           dir = dx >= 0 ? 1 : -1;
@@ -234,7 +240,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         break;
       }
 
-      // 3. CHASE: Advance towards player
+      // 3. PERSECUCIÓN: Avanza hacia el jugador
       case "chase": {
         if (!player || dist > visionDistance * 1.5) {
           skeleton.state = "patrol";
@@ -244,7 +250,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         dir = dx >= 0 ? 1 : -1;
         skeleton.flipX = dir < 0;
 
-        // In melee attack range
+        // Dentro del rango de ataque cuerpo a cuerpo
         if (Math.abs(dx) <= attackDistance && Math.abs(dy) <= 24 && attackCooldown <= 0) {
           skeleton.state = "attack";
           attackCooldown = 1.4;
@@ -287,7 +293,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
         break;
       }
 
-      // 4. ATTACK: Short pause during swing
+      // 4. ATAQUE: Pequeño avance durante el espadazo
       case "attack": {
         skeleton.move(dir * (chaseSpeed * 0.15), 0);
         break;
@@ -299,7 +305,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
     }
   });
 
-  // Floor seam protection
+  // Protección contra uniones del suelo
   skeleton.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
     if (col.target.pos.y >= skeleton.pos.y && col.displacement.x !== 0) {
@@ -307,7 +313,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
     }
   });
 
-  // Turn around on solid wall obstacles
+  // Da la vuelta al chocar contra muros sólidos
   skeleton.onCollide("solid", (obj, col) => {
     if (obj.pos.y < skeleton.pos.y + 4) {
       if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
@@ -317,7 +323,7 @@ export function createSkeleton(k, x, y, patrolRange = 60) {
     }
   });
 
-  // Hurt from player sword melee attack
+  // Recibe daño del hitbox de espada del jugador
   skeleton.onCollide("sword_hitbox", (hitbox) => {
     skeleton.takeDamage(1, hitbox.pos.x);
   });

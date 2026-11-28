@@ -1,19 +1,20 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes the player character (Mili).
+ * Crea e inicializa al personaje jugador (Mili).
  * 
- * Includes:
- * - Fluent movement and double jump (Req-5)
- * - Sword melee attack
- * - Tactical Shield Block mechanic (Req-5)
- * - Damage, invulnerability and lives system (Req-4)
+ * Incluye:
+ * - Movimiento fluido y doble salto (Req-5)
+ * - Ataque cuerpo a cuerpo con espada
+ * - Mecánica táctica de bloqueo con escudo (Req-5)
+ * - Sistema de daño, invulnerabilidad y vidas (Req-4)
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - Initial X coordinate
- * @param {number} y - Initial Y coordinate
- * @param {boolean} allowDoubleJump - Enables double jump mechanic
- * @returns {import("kaboom").GameObj} The player game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} [x=100] - Coordenada X inicial
+ * @param {number} [y=200] - Coordenada Y inicial
+ * @param {boolean} [allowDoubleJump=true] - Habilita la mecánica de doble salto
+ * @param {number|null} [maxFallY=null] - Límite vertical opcional de caída al vacío
+ * @returns {import("kaboom").GameObj} Objeto de juego del jugador
  */
 export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFallY = null) {
   let activeSwordHitbox = null;
@@ -21,13 +22,13 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
   const player = k.add([
     k.sprite("player", { anim: "idle" }),
     k.pos(x, y),
-    // Scale knight so height matches 1 map block (24px)
-    // Raw knight sprite in mili.png is 21px tall (helmet y=39 to boots y=60).
-    // Scale factor: 24 / 21 = 8 / 7 (~1.143). 21 * (24/21) = 24px exactly.
+    // Escala al caballero para que su altura coincida con 1 bloque del mapa (24px)
+    // El sprite original en mili.png mide 21px de alto (casco y=39 a botas y=60).
+    // Factor de escala: 24 / 21 = 8 / 7 (~1.143). 21 * (24/21) = 24px exactos.
     k.scale(24 / 21),
-    // Precision hitbox aligned to feet (y=+12 in 96x96 frame) and helmet (y=-9 from center):
-    // Rect center y = 1.5, height = 21 -> top = -9, bottom = +12.
-    // When scaled by 24/21, total height is 24px and boots rest 100% flush on the block surface.
+    // Hitbox de precisión alineado con los pies (y=+12 en cuadro 96x96) y casco (y=-9 desde el centro):
+    // Centro del rectángulo y = 1.5, alto = 21 -> arriba = -9, abajo = +12.
+    // Al escalar por 24/21, la altura total es 24px y las botas apoyan al 100% sobre el bloque.
     k.area({ shape: new k.Rect(k.vec2(0, 1.5), 14, 21) }),
     k.body({ jumpForce: 380, maxVelocity: 420 }),
     k.anchor("center"),
@@ -46,7 +47,9 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       prevBottom: y + 13.7,
       prevY: y,
 
-      // Fatal death: Instant kill from bottomless pit or 0 lives
+      /**
+       * Ejecuta la muerte instantánea del jugador por caída al vacío o al quedarse sin vidas.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -72,21 +75,24 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         });
       },
 
-      // Damage & invulnerability system (Req-4) with Shield Block defense
+      /**
+       * Gestiona la recepción de daño, el bloqueo con escudo (Req-5) y la invulnerabilidad (Req-4).
+       * @param {number} [knockbackDir=0] - Dirección horizontal del empuje (-1 izquierda, 1 derecha)
+       */
       receiveDamage(knockbackDir = 0) {
         if (this.invulnerable || this.isHurt || this.isDead) return;
 
-        // --- Shield Block Defense (Req-5) ---
-        // If blocking and attack comes from the front: Absorb 100% damage!
+        // --- Defensa con Escudo (Req-5) ---
+        // Si está bloqueando y el ataque viene de frente, absorbe el 100% del daño
         const isFacingAttacker =
           (this.facing === "right" && knockbackDir < 0) ||
           (this.facing === "left" && knockbackDir > 0);
 
         if (this.isBlocking && isFacingAttacker) {
-          k.play("spring"); // Metal clink feedback sound
-          this.move(knockbackDir * 60, 0); // Light pushback
+          k.play("spring"); // Sonido metálico de bloqueo
+          this.move(knockbackDir * 60, 0); // Empuje ligero hacia atrás
 
-          // Floating block notification
+          // Notificación flotante de bloqueo exitoso
           const blockText = k.add([
             k.text("¡BLOQUEO!", { size: 10 }),
             k.pos(this.pos.x, this.pos.y - 16),
@@ -101,7 +107,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
           return;
         }
 
-        // Damage received
+        // Descuenta una vida tras recibir daño
         const livesLeft = gameState.loseLife();
 
         if (livesLeft <= 0) {
@@ -118,12 +124,12 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         }
         k.play("hit");
 
-        // Knockback physics
+        // Física de retroceso tras el golpe
         this.jump(180);
         this.move(knockbackDir * 140, 0);
         this.play("hurt");
 
-        // Invulnerability blinking effect (1.5 seconds)
+        // Parpadeo de invulnerabilidad (1.5 segundos)
         const blinkLoop = k.loop(0.1, () => {
           this.opacity = this.opacity === 1 ? 0.3 : 1;
         });
@@ -139,7 +145,9 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         });
       },
 
-      // Sword attack mechanic
+      /**
+       * Ejecuta el ataque cuerpo a cuerpo con espada generando un hitbox temporal frontal.
+       */
       attack() {
         if (this.isAttacking || this.isHurt || this.isBlocking) return;
 
@@ -147,7 +155,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         const animToPlay = Math.random() > 0.5 ? "attack1" : "attack2";
         this.play(animToPlay);
 
-        // Spawn a temporary melee attack hitbox in front of the player
+        // Genera un hitbox temporal frente al jugador durante el tajo
         const attackOffsetX = this.facing === "right" ? 18 : -18;
         if (activeSwordHitbox) {
           activeSwordHitbox.destroy();
@@ -177,7 +185,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   ]);
 
-  // Input helpers: Kaboom's onKey functions expect a single key string, not an array
+  // Auxiliares de entrada: las funciones onKey de Kaboom esperan una tecla individual, no un arreglo
   function onKeysPress(keys, action) {
     for (const key of keys) {
       k.onKeyPress(key, () => action(key));
@@ -196,7 +204,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   }
 
-  // Jump input: Space, Up, W (With double jump mechanic)
+  // Entrada de salto: Espacio, Arriba, W (con mecánica de doble salto)
   onKeysPress(["space", "up", "w"], () => {
     if (player.isHurt || player.isBlocking || player.isDead) return;
 
@@ -211,13 +219,13 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
-  // Sword Attack input: Z or J or Enter
+  // Entrada de ataque con espada: Z, J o Enter
   onKeysPress(["z", "j", "enter"], () => {
     if (player.isDead) return;
     player.attack();
   });
 
-  // Shield Block input: Shift or C
+  // Entrada de bloqueo con escudo: Shift o C
   onKeysDown(["shift", "c"], () => {
     if (player.isDead) return;
     if (player.isGrounded() && !player.isAttacking && !player.isHurt) {
@@ -232,35 +240,35 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     player.isBlocking = false;
   });
 
-  // Core update loop: movement physics and animation state machine
+  // Bucle principal de actualización: física de movimiento y máquina de estados de animación
   player.onUpdate(() => {
     if (player.isDead) return;
 
-    // Safety 1: Prevent physics tunneling during high falls or delta time lag spikes
+    // Seguridad 1: evita atravesar plataformas durante caídas rápidas o picos de lag
     if (player.vel) {
       if (player.vel.y > 420) player.vel.y = 420;
       if (player.vel.y < -590) player.vel.y = -590;
     }
 
-    // Record position before physics moves the player this frame
+    // Registra la posición previa antes de que la física mueva al jugador este cuadro
     player.prevBottom = player.pos.y + 13.7;
     player.prevY = player.pos.y;
 
-    // Safety 2: Bottomless pit death threshold
-    // Level 1, 2, Dungeons & Secret have map height 360 (pit death at y > 420, well off-screen).
-    // Level 3 (Tower) has map height 1680 (pit death at y > 1760).
+    // Seguridad 2: umbral de muerte por caída al vacío
+    // Niveles 1, 2, Mazmorras y Secreto tienen altura 360 (muerte en y > 420).
+    // Nivel 3 (Torre) tiene altura 1680 (muerte en y > 1760).
     const deathY = maxFallY ?? (gameState.currentLevel === 3 ? 1760 : 420);
     if (player.pos.y > deathY) {
       player.die();
       return;
     }
 
-    // Reset double jump when touching ground
+    // Restablece el doble salto al tocar el suelo
     if (player.isGrounded()) {
       player.hasDoubleJumped = false;
     }
 
-    // Horizontal movement physics (A / D / Left / Right)
+    // Movimiento horizontal (A / D / Izquierda / Derecha)
     if (!player.isHurt) {
       const moveLeft = k.isKeyDown("left") || k.isKeyDown("a");
       const moveRight = k.isKeyDown("right") || k.isKeyDown("d");
@@ -278,7 +286,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       }
     }
 
-    // Don't interrupt attack, hurt, or blocking animations
+    // No interrumpir animaciones de ataque o daño
     if (player.isAttacking || player.isHurt) return;
 
     if (player.isBlocking) {
@@ -288,7 +296,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       return;
     }
 
-    // Air animation
+    // Animación en el aire
     if (!player.isGrounded()) {
       if (player.curAnim() !== "jump") {
         player.play("jump");
@@ -296,7 +304,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
       return;
     }
 
-    // Ground animations: Walk vs Idle
+    // Animaciones en tierra: caminar vs reposo
     const isMovingHorizontally =
       k.isKeyDown("left") ||
       k.isKeyDown("a") ||
@@ -314,16 +322,12 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
-  // --- Physics Resolution & Collision Geometry Handling ---
-  // Fixes:
-  // 1. SOLID PLATFORMS & FLOORS: Platforms now behave 100% as solid ground. Boots stay flush,
-  //    zero chance of phasing or tunneling through platforms, and 100% reliable jumping.
-  // 2. CEILING HEADBUTTS: Halts upward velocity and forces downward separation when player
-  //    hits the underside of any solid block or platform from below.
-  // 3. WALLS & LATERAL EDGES: Preserves SAT horizontal displacement (displacement.x) when
-  //    touching side faces or corners, preventing "invisible ledges" or floating in mid-air.
-  // 4. SEAMLESS FLOORS: Keeps boots flush and eliminates seam hitching when player is
-  //    genuinely horizontally positioned over the top surface.
+  // --- Resolución de Física y Manejo de Geometría de Colisiones ---
+  // Corrige:
+  // 1. PLATAFORMAS Y SUELOS SÓLIDOS: Las plataformas funcionan 100% como suelo sólido sin atravesarse.
+  // 2. GOLPES DE CABEZA EN TECHOS: Detiene la velocidad ascendente y separa hacia abajo al chocar por debajo.
+  // 3. MUROS Y BORDES LATERALES: Conserva el desplazamiento horizontal (displacement.x) en caras laterales.
+  // 4. SUELOS CONTINUOS: Mantiene las botas al ras y elimina enganches en las uniones entre bloques.
   player.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
 
@@ -339,17 +343,16 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     const playerTop = player.pos.y - 10.3;
     const playerBottom = player.pos.y + 13.7;
 
-    // Horizontal overlap between player's body and the target block
+    // Solapamiento horizontal entre el cuerpo del jugador y el bloque objetivo
     const overlapX = Math.min(playerRight, targetRight) - Math.max(playerLeft, targetLeft);
     const isHorizontallyOver = overlapX >= 3;
 
     // =========================================================================
-    // 1. ASCENDING (UPWARD VELOCITY): player.vel.y < 0
+    // 1. ASCENDIENDO (VELOCIDAD VERTICAL NEGATIVA): player.vel.y < 0
     // =========================================================================
     if (player.vel && player.vel.y < 0) {
-      // SOLID CEILINGS & PLATFORMS:
-      // When jumping into the underside of a block or platform from below, stop upward velocity
-      // and separate downward (like hitting a solid ceiling/Mario block).
+      // TECHOS Y PLATAFORMAS SÓLIDAS:
+      // Al golpear la parte inferior de un bloque desde abajo, detiene el ascenso y separa hacia abajo.
       if (isHorizontallyOver && targetBottom <= player.pos.y + 6 && playerTop <= targetBottom + 4) {
         player.vel.y = 0;
         const penetrationY = targetBottom - playerTop;
@@ -358,29 +361,25 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         return;
       }
 
-      // If grazing the SIDE of a wall while jumping upward:
-      // Allow normal lateral resolution (push player away horizontally)
-      // and do NOT kill upward velocity or push vertically!
+      // Si roza el COSTADO de un muro mientras salta hacia arriba:
+      // Permite la resolución lateral normal sin anular la velocidad vertical.
       return;
     }
 
     // =========================================================================
-    // 2. DESCENDING OR GROUNDED (DOWNWARD / ZERO VELOCITY): player.vel.y >= 0
+    // 2. DESCENDIENDO O EN TIERRA (VELOCIDAD VERTICAL >= 0): player.vel.y >= 0
     // =========================================================================
     if (!player.vel || player.vel.y >= 0) {
       const penetrationY = playerBottom - targetTop;
 
-      // Contact with the top surface of a floor block or platform:
-      // 1. Player is horizontally over the block (overlapX >= 3)
-      // 2. Player's feet are contacting the top surface (penetrationY between -2 and 16)
-      // 3. Collision resolution is predominantly vertical (landing) or boots are at the surface
+      // Contacto con la superficie superior de un bloque o plataforma:
       const isVerticalLanding = col.isBottom() || Math.abs(col.displacement.y) >= Math.abs(col.displacement.x) || (penetrationY >= 0 && penetrationY <= 8);
 
       if (isHorizontallyOver && player.pos.y < targetTop + 10 && penetrationY >= -2 && isVerticalLanding) {
-        // Prevent SAT from kicking player sideways across flat floor seams or platform edges
+        // Evita que SAT empuje lateralmente al jugador en las uniones planas del suelo
         col.displacement.x = 0;
 
-        // Force upward displacement to keep boots firmly flush on the surface
+        // Fuerza el desplazamiento vertical hacia arriba para mantener las botas al ras de la superficie
         if (penetrationY > 0) {
           col.displacement.y = -penetrationY;
         } else if (col.displacement.y >= 0) {
@@ -389,13 +388,11 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
         return;
       }
 
-      // Otherwise, if player is touching the SIDE of the block (e.g. wall or corner):
-      // Keep SAT's lateral displacement (displacement.x) and DO NOT force vertical displacement!
-      // This ensures the player slides down the wall without getting stuck on an "invisible block".
+      // En caso contrario (contacto lateral con muro o esquina), conserva displacement.x para deslizarse suavemente.
     }
   });
 
-  // Additional safety callbacks for upward ceiling contact
+  // Comprobaciones adicionales de seguridad para contacto superior con techos
   player.onCollide("solid", (solid) => {
     if (player.vel && player.vel.y < 0) {
       const solidHeight = solid.height ?? 24;
@@ -426,7 +423,7 @@ export function createPlayer(k, x = 100, y = 200, allowDoubleJump = true, maxFal
     }
   });
 
-  // Fast O(1) player lookup reference for AI agents across scenes
+  // Referencia rápida en O(1) al jugador para los agentes de IA entre escenas
   gameState.player = player;
   player.onDestroy(() => {
     if (gameState.player === player) {

@@ -1,20 +1,20 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes an Orc Warrior enemy for Level 2 (Caverns).
+ * Crea e inicializa un enemigo Guerrero Orco para el Nivel 2 (Cavernas).
  * 
- * Features:
- * - Tougher 3 HP elite enemy with heavy club/axe attack.
- * - State machine: PATROL, ALERT, CHASE, ATTACK, HURT, DIE.
- * - Can be blocked with Shield (Shift/C) or struck with sword.
- * - Stomp deals 2 critical damage.
- * - Calibrated bounding box (24px height, 0px sinking).
+ * Características:
+ * - Enemigo de élite resistente con 3 HP y ataque pesado de garrote/hacha.
+ * - Máquina de estados: PATROL, ALERT, CHASE, ATTACK, HURT, DIE.
+ * - Sus ataques pueden bloquearse con el Escudo (Shift/C) o responderse con la espada.
+ * - El pisotón aéreo inflige 2 de daño crítico.
+ * - Caja de colisión calibrada (24px de altura, sin hundirse en el suelo).
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - Initial X coordinate
- * @param {number} y - Initial Y coordinate
- * @param {number} patrolRange - Max distance to wander left/right
- * @returns {import("kaboom").GameObj} The orc game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} patrolRange - Distancia máxima de patrulla hacia izquierda/derecha
+ * @returns {import("kaboom").GameObj} Objeto de juego del orco
  */
 export function createOrc(k, x, y, patrolRange = 70) {
   let dir = -1;
@@ -30,9 +30,9 @@ export function createOrc(k, x, y, patrolRange = 70) {
   const orc = k.add([
     k.sprite("orc", { anim: "walk" }),
     k.pos(x, y),
-    // Scale orc to 24px (1 map block tall, matching Mili)
+    // Escala al orco a 24px (1 bloque de mapa de alto, igual que Mili)
     k.scale(24 / 16),
-    // Precision hitbox aligned to feet (y=+7 in 100x100 frame) and head (y=-9)
+    // Hitbox de precisión alineado con los pies (y=+7 en cuadro 100x100) y la cabeza (y=-9)
     k.area({ shape: new k.Rect(k.vec2(0, -1), 16, 16) }),
     k.body({ maxVelocity: 350 }),
     k.anchor("center"),
@@ -46,7 +46,11 @@ export function createOrc(k, x, y, patrolRange = 70) {
       isDead: false,
       isHurt: false,
 
-      // Take damage from player melee attacks
+      /**
+       * Aplica daño al orco por ataques cuerpo a cuerpo o pisotones del jugador.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Coordenada X del atacante para calcular el retroceso
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp -= dmg;
@@ -64,15 +68,15 @@ export function createOrc(k, x, y, patrolRange = 70) {
           this.state = "hurt";
           this.play("hurt");
 
-          // Knockback
+          // Retroceso físico al recibir impacto
           const knockDir = this.pos.x >= fromX ? 1 : -1;
           this.jump(100);
           this.move(knockDir * 80, 0);
 
-          // Red hit flash feedback
+          // Destello rojo de impacto
           this.color = k.rgb(255, 110, 110);
 
-          // Damage indicator popup
+          // Indicador flotante de daño
           const dmgPopup = k.add([
             k.text(`-${dmg}`, { font: "pressstart", size: 8 }),
             k.pos(this.pos.x, this.pos.y - 16),
@@ -89,13 +93,15 @@ export function createOrc(k, x, y, patrolRange = 70) {
             if (this.isDead) return;
             this.color = k.rgb(255, 255, 255);
             this.isHurt = false;
-            // Enraged: charge player immediately
+            // Enfurecido: persigue al jugador de inmediato
             this.state = "chase";
           });
         }
       },
 
-      // Defeat: score popup and fadeout
+      /**
+       * Ejecuta la derrota del orco, muestra la puntuación y destruye la entidad.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -108,7 +114,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
         k.play("hit");
         gameState.addScore(300);
 
-        // Score award popup
+        // Texto flotante de puntuación (+300)
         const scorePopup = k.add([
           k.text("+300", { font: "pressstart", size: 9 }),
           k.pos(this.pos.x, this.pos.y - 16),
@@ -122,7 +128,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
         k.wait(0.7, () => scorePopup.destroy());
 
         this.play("death");
-        // Ignore all future collisions safely without unusing components (prevents Kaboom spatial grid corruption)
+        // Ignora colisiones futuras de forma segura sin eliminar componentes (evita corromper la grilla espacial)
         this.collisionIgnore = ["*"];
 
         k.wait(0.6, () => {
@@ -132,7 +138,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
     }
   ]);
 
-  // Shows an "!" alert balloon over the orc when spotting the player
+  // Muestra un globo de alerta "!" sobre el orco al detectar al jugador
   function showAlertBubble() {
     const alertBox = k.add([
       k.rect(14, 14, { radius: 3 }),
@@ -156,11 +162,11 @@ export function createOrc(k, x, y, patrolRange = 70) {
     });
   }
 
-  // AI Update Loop
+  // Bucle de actualización de IA
   orc.onUpdate(() => {
     if (orc.isDead) return;
 
-    // Safety: prevent physics tunneling through platforms on high framerate jumps or lag spikes
+    // Seguridad: evita atravesar plataformas en caídas rápidas o picos de lag
     if (orc.vel && orc.vel.y > 350) {
       orc.vel.y = 350;
     }
@@ -190,17 +196,17 @@ export function createOrc(k, x, y, patrolRange = 70) {
       Math.abs(dy) <= 60;
 
     switch (orc.state) {
-      // 1. PATROL: Wander platform
+      // 1. PATRULLA: Camina por la plataforma
       case "patrol": {
         orc.move(patrolSpeed * dir, 0);
-        // Default sprite faces right; flip when moving left (dir < 0)
+        // El sprite base mira a la derecha; se invierte al moverse a la izquierda (dir < 0)
         orc.flipX = dir < 0;
 
         if (orc.isGrounded() && orc.curAnim() !== "walk") {
           orc.play("walk");
         }
 
-        // Boundary turnaround
+        // Giro al llegar a los límites de patrulla
         if (orc.pos.x < startX - patrolRange) {
           dir = 1;
         } else if (orc.pos.x > startX + patrolRange) {
@@ -220,7 +226,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
         break;
       }
 
-      // 2. ALERT: Surprise freeze
+      // 2. ALERTA: Pausa breve de sorpresa antes de perseguir
       case "alert": {
         if (player) {
           dir = dx >= 0 ? 1 : -1;
@@ -229,7 +235,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
         break;
       }
 
-      // 3. CHASE: Pursue player actively
+      // 3. PERSECUCIÓN: Persigue activamente al jugador
       case "chase": {
         if (!player || dist > visionDistance * 1.6) {
           orc.state = "patrol";
@@ -239,13 +245,13 @@ export function createOrc(k, x, y, patrolRange = 70) {
         dir = dx >= 0 ? 1 : -1;
         orc.flipX = dir < 0;
 
-        // Check if close enough for a melee swing
+        // Comprueba si está a distancia de golpe cuerpo a cuerpo
         if (Math.abs(dx) <= attackDistance && Math.abs(dy) <= 24 && attackCooldown <= 0) {
           orc.state = "attack";
           attackCooldown = 1.8;
           orc.play("attack");
 
-          // Swing club/axe forward
+          // Golpe frontal con garrote/hacha
           const attackOffsetX = dir * 18;
           k.wait(0.2, () => {
             if (orc.isDead || orc.state !== "attack") return;
@@ -283,7 +289,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
         break;
       }
 
-      // 4. ATTACK: Brief pause during swing
+      // 4. ATAQUE: Avance breve durante el golpe
       case "attack": {
         orc.move(dir * (chaseSpeed * 0.2), 0);
         break;
@@ -295,7 +301,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
     }
   });
 
-  // Floor seam protection: prevent SAT from displacing enemy horizontally on flat floor joints
+  // Protección de uniones del suelo: evita desplazamientos horizontales en junturas planas
   orc.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
     if (col.target.pos.y >= orc.pos.y && col.displacement.x !== 0) {
@@ -303,7 +309,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
     }
   });
 
-  // Turn around on solid obstacles (lateral wall impact only on obstacles at waist/head height)
+  // Da la vuelta al chocar lateralmente contra muros sólidos a la altura del cuerpo/cabeza
   orc.onCollide("solid", (obj, col) => {
     if (obj.pos.y < orc.pos.y + 4) {
       if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
@@ -313,7 +319,7 @@ export function createOrc(k, x, y, patrolRange = 70) {
     }
   });
 
-  // Hurt from player sword melee attack
+  // Recibe daño del hitbox de espada del jugador
   orc.onCollide("sword_hitbox", (hitbox) => {
     orc.takeDamage(1, hitbox.pos.x);
   });

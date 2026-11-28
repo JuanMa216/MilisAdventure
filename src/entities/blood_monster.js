@@ -1,24 +1,24 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes a Blood Monster elite enemy for the Secret Easter Egg.
+ * Crea e inicializa un enemigo de élite Monstruo de Sangre (Blood Monster) para el nivel secreto.
  * 
- * Features:
- * - 10 HP behemoth from the Tiny RPG Character Asset Pack.
- * - Overhead dynamic Health Bar displaying current HP (10/10).
- * - Multi-attack AI: Heavy claw strikes (Attack01) and blood lunges (Attack02).
- * - Melee attacks can be blocked 100% with Mili's Shield (Shift/C).
- * - Stomp deals 2 critical damage with bounce.
- * - Sword strikes deal 1 damage with hit-flash & knockback.
- * - Safely resolves collisions with collisionIgnore = ["*"] on defeat.
- * - O(1) player tracking.
+ * Características:
+ * - Coloso de 10 HP del paquete Tiny RPG Character Asset Pack.
+ * - Barra de salud dinámica sobre la cabeza que muestra el HP actual (10/10).
+ * - IA multi-ataque: zarpazos pesados (Attack01) y embestidas sangrientas (Attack02).
+ * - Sus ataques cuerpo a cuerpo pueden bloquearse al 100% con el Escudo de Mili (Shift/C).
+ * - El pisotón aéreo inflige 2 de daño crítico con rebote.
+ * - Los golpes de espada infligen 1 de daño con destello de impacto y retroceso.
+ * - Resuelve colisiones de forma segura al morir mediante collisionIgnore = ["*"].
+ * - Seguimiento del jugador en O(1).
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - Initial X coordinate
- * @param {number} y - Initial Y coordinate
- * @param {number} patrolRange - Max distance to wander left/right
- * @param {Function} onDied - Optional callback when this monster is defeated
- * @returns {import("kaboom").GameObj} The blood monster game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} patrolRange - Distancia máxima de patrulla hacia izquierda/derecha
+ * @param {Function} onDied - Callback opcional al derrotar a este monstruo
+ * @returns {import("kaboom").GameObj} Objeto de juego del monstruo de sangre
  */
 export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
   let dir = -1;
@@ -34,7 +34,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
   const monster = k.add([
     k.sprite("blood_monster", { anim: "walk" }),
     k.pos(x, y),
-    // Scale to imposing elite stature (approx 36px visual height)
+    // Escala a una estatura imponente de élite (~36px de altura visual)
     k.scale(1.7),
     k.area({ shape: new k.Rect(k.vec2(0, -1), 22, 22) }),
     k.body({ maxVelocity: 380 }),
@@ -49,7 +49,11 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
       isDead: false,
       isHurt: false,
 
-      // Take damage from sword melee attacks or aerial stomps
+      /**
+       * Aplica daño por ataques cuerpo a cuerpo de espada o pisotones aéreos.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Coordenada X del atacante para calcular el retroceso
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp = Math.max(0, this.hp - dmg);
@@ -69,15 +73,15 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
           this.state = "hurt";
           this.play("hurt");
 
-          // Knockback
+          // Retroceso físico al recibir impacto
           const knockDir = this.pos.x >= fromX ? 1 : -1;
           this.jump(110);
           this.move(knockDir * 85, 0);
 
-          // Crimson flash feedback
+          // Destello carmesí de impacto
           this.color = k.rgb(255, 120, 120);
 
-          // Damage indicator popup
+          // Indicador flotante de daño
           const dmgPopup = k.add([
             k.text(`-${dmg}`, { font: "pressstart", size: 8 }),
             k.pos(this.pos.x, this.pos.y - 28),
@@ -94,13 +98,15 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
             if (this.isDead) return;
             this.color = k.rgb(255, 255, 255);
             this.isHurt = false;
-            // Charge the player immediately when injured
+            // Embiste hacia el jugador inmediatamente al quedar herido
             this.state = "chase";
           });
         }
       },
 
-      // Defeat sequence
+      /**
+       * Ejecuta la secuencia de derrota, otorga +1000 puntos y oculta la barra de salud.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -115,7 +121,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
         k.shake(6);
         gameState.addScore(1000);
 
-        // Huge score award popup (+1000)
+        // Texto flotante de gran recompensa (+1000)
         const scorePopup = k.add([
           k.text("+1000", { font: "pressstart", size: 9 }),
           k.pos(this.pos.x, this.pos.y - 24),
@@ -129,10 +135,10 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
         k.wait(0.7, () => scorePopup.destroy());
 
         this.play("death");
-        // Safely ignore all collisions without deleting component data
+        // Ignora colisiones de forma segura sin eliminar componentes
         this.collisionIgnore = ["*"];
 
-        // Hide health bar
+        // Oculta la barra de vida superior
         hpBg.hidden = true;
         hpFill.hidden = true;
         hpText.hidden = true;
@@ -148,7 +154,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     }
   ]);
 
-  // --- Overhead Health Bar UI ---
+  // --- Interfaz de Barra de Salud Superior ---
   const barWidth = 32;
   const barHeight = 4;
   const hpBg = k.add([
@@ -176,13 +182,14 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     k.z(22)
   ]);
 
+  // Actualiza el ancho y texto de la barra de salud
   function updateHpBar() {
     const pct = Math.max(0, monster.hp / monster.maxHp);
     hpFill.width = barWidth * pct;
     hpText.text = `${monster.hp}/10`;
   }
 
-  // Synchronize health bar with monster position
+  // Sincroniza la barra de salud con la posición del monstruo
   hpBg.onUpdate(() => {
     if (monster.isDead) return;
     hpBg.pos.x = monster.pos.x;
@@ -199,7 +206,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     hpText.destroy();
   });
 
-  // Alert reaction mark
+  // Marca de reacción de alerta "!" sobre el monstruo
   function showAlertBubble() {
     const alertBox = k.add([
       k.rect(14, 14, { radius: 3 }),
@@ -229,7 +236,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     });
   }
 
-  // --- AI State Machine Update Loop ---
+  // --- Bucle de actualización de la Máquina de Estados de IA ---
   monster.onUpdate(() => {
     if (monster.isDead) return;
 
@@ -261,7 +268,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
       Math.abs(dy) <= 60;
 
     switch (monster.state) {
-      // 1. PATROL: Wander platform back and forth
+      // 1. PATRULLA: Recorre la plataforma de un lado a otro
       case "patrol": {
         monster.move(patrolSpeed * dir, 0);
         monster.flipX = dir < 0;
@@ -270,7 +277,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
           monster.play("walk");
         }
 
-        // Boundary turnaround
+        // Giro al alcanzar los límites de patrulla
         if (monster.pos.x < startX - patrolRange) {
           dir = 1;
         } else if (monster.pos.x > startX + patrolRange) {
@@ -290,7 +297,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
         break;
       }
 
-      // 2. ALERT: Momentary pause before charging
+      // 2. ALERTA: Pausa momentánea antes de cargar contra el jugador
       case "alert": {
         if (player) {
           dir = dx >= 0 ? 1 : -1;
@@ -299,7 +306,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
         break;
       }
 
-      // 3. CHASE: Rapidly stalk player
+      // 3. PERSECUCIÓN: Acecha rápidamente al jugador
       case "chase": {
         if (!player || dist > visionDistance * 1.5) {
           monster.state = "patrol";
@@ -309,7 +316,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
         dir = dx >= 0 ? 1 : -1;
         monster.flipX = dir < 0;
 
-        // In melee attack range
+        // En rango de ataque cuerpo a cuerpo
         if (Math.abs(dx) <= attackDistance && Math.abs(dy) <= 24 && attackCooldown <= 0) {
           monster.state = "attack";
           attackCooldown = 1.6;
@@ -354,7 +361,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
         break;
       }
 
-      // 4. ATTACK: Short forward momentum during strike
+      // 4. ATAQUE: Pequeño impulso hacia adelante durante el golpe
       case "attack": {
         monster.move(dir * (chaseSpeed * 0.15), 0);
         break;
@@ -366,7 +373,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     }
   });
 
-  // Floor seam protection
+  // Protección contra uniones del suelo
   monster.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
     if (col.target.pos.y >= monster.pos.y && col.displacement.x !== 0) {
@@ -374,7 +381,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     }
   });
 
-  // Turn around on solid wall obstacles
+  // Da la vuelta al chocar contra muros sólidos
   monster.onCollide("solid", (obj, col) => {
     if (obj.pos.y < monster.pos.y + 4) {
       if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
@@ -384,7 +391,7 @@ export function createBloodMonster(k, x, y, patrolRange = 70, onDied = null) {
     }
   });
 
-  // Hurt from player sword melee attack
+  // Recibe daño de la espada del jugador
   monster.onCollide("sword_hitbox", (hitbox) => {
     monster.takeDamage(1, hitbox.pos.x);
   });

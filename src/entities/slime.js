@@ -1,19 +1,19 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes an advanced Slime enemy with a full Finite State Machine AI:
- * - PATROL: Wanders platform, periodic hops, turns at boundaries and walls.
- * - ALERT: Detects player in vision radius, shows "!" reaction, prepares to chase.
- * - CHASE: Pursues player with increased speed and faces target.
- * - ATTACK: Lunges with biting/slashing animation and forward momentum when in close range.
- * - HURT: 2 HP system; takes damage with knockback and squashing reaction.
- * - DIE: Melts into puddle with particle/popup score feedback.
+ * Crea e inicializa un enemigo Slime avanzado con IA de Máquina de Estados Finitos completa:
+ * - PATROL: Recorre la plataforma con saltos periódicos y gira en los bordes o muros.
+ * - ALERT: Detecta al jugador en su radio de visión, muestra "!" y se prepara para perseguir.
+ * - CHASE: Persigue al jugador a mayor velocidad mirando hacia su dirección.
+ * - ATTACK: Embiste con impulso frontal cuando el jugador está a corta distancia.
+ * - HURT: Sistema de 2 HP; recibe daño con retroceso y destello rojo.
+ * - DIE: Se derrite en el suelo otorgando puntuación flotante.
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
- * @param {number} patrolRange - Max distance to patrol left/right
- * @returns {import("kaboom").GameObj} The slime game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} patrolRange - Distancia máxima de patrulla hacia izquierda/derecha
+ * @returns {import("kaboom").GameObj} Objeto de juego del slime
  */
 export function createSlime(k, x, y, patrolRange = 80) {
   let dir = -1;
@@ -30,7 +30,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
   const slime = k.add([
     k.sprite("slime", { anim: "walk" }),
     k.pos(x, y),
-    // Tight hitbox for the slime body (top at -2, bottom at +12, flush with ground)
+    // Hitbox ajustado al cuerpo del slime (arriba en -2, abajo en +12, al ras del suelo)
     k.area({ shape: new k.Rect(k.vec2(0, 5), 18, 14) }),
     k.body({ maxVelocity: 350 }),
     k.anchor("center"),
@@ -44,7 +44,11 @@ export function createSlime(k, x, y, patrolRange = 80) {
       isDead: false,
       isHurt: false,
 
-      // Take damage from sword melee attack
+      /**
+       * Aplica daño al slime por un ataque de espada y gestiona el retroceso.
+       * @param {number} [dmg=1] - Daño recibido
+       * @param {number} [fromX=0] - Posición X del atacante para calcular la dirección del retroceso
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp -= dmg;
@@ -57,15 +61,15 @@ export function createSlime(k, x, y, patrolRange = 80) {
           this.state = "hurt";
           this.play("hurt");
 
-          // Knockback in opposite direction of attacker
+          // Retroceso en dirección opuesta al atacante
           const knockDir = this.pos.x >= fromX ? 1 : -1;
           this.jump(110);
           this.move(knockDir * 90, 0);
 
-          // Red hit flash feedback
+          // Destello rojo de impacto
           this.color = k.rgb(255, 110, 110);
 
-          // Damage indicator popup
+          // Indicador flotante de daño
           const dmgPopup = k.add([
             k.text(`-${dmg}`, { font: "pressstart", size: 8 }),
             k.pos(this.pos.x, this.pos.y - 14),
@@ -82,23 +86,25 @@ export function createSlime(k, x, y, patrolRange = 80) {
             if (this.isDead) return;
             this.color = k.rgb(255, 255, 255);
             this.isHurt = false;
-            // Become enraged and chase the player immediately
+            // Se enfurece y persigue al jugador de inmediato
             this.state = "chase";
           });
         }
       },
 
-      // Instant fatal defeat (Stomp from above or lethal sword combo)
+      /**
+       * Derrota fatal del slime (por pisotón o golpe letal) y suma +200 puntos.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
         this.state = "die";
 
-        // Sound and score award
+        // Sonido y recompensa de puntuación
         k.play("hit");
         gameState.addScore(200);
 
-        // Show floating score popup (+200) in pixel font
+        // Texto flotante de puntuación (+200) en fuente pixel
         const popup = k.add([
           k.text("+200", { font: "pressstart", size: 9 }),
           k.pos(this.pos.x, this.pos.y - 12),
@@ -111,7 +117,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
         });
         k.wait(0.6, () => popup.destroy());
 
-        // Play the melting death animation from the spritesheet
+        // Reproduce la animación de derretimiento del spritesheet
         this.play("die");
         this.collisionIgnore = ["*"];
         k.wait(0.8, () => {
@@ -121,7 +127,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
     }
   ]);
 
-  // Shows an "!" alert balloon over the slime when spotting the player
+  // Muestra un indicador de alerta "!" sobre el slime al detectar al jugador
   function showAlertBubble() {
     const alert = k.add([
       k.text("!", { font: "pressstart", size: 9 }),
@@ -137,11 +143,11 @@ export function createSlime(k, x, y, patrolRange = 80) {
     k.wait(0.4, () => alert.destroy());
   }
 
-  // --- Main AI Behavior Loop ---
+  // --- Bucle principal de comportamiento de IA ---
   slime.onUpdate(() => {
     if (slime.isDead) return;
 
-    // Safety: prevent physics tunneling through platforms on high framerate jumps or lag spikes
+    // Seguridad: evita atravesar plataformas en caídas rápidas o picos de lag
     if (slime.vel && slime.vel.y > 350) {
       slime.vel.y = 350;
     }
@@ -149,7 +155,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
     const dt = k.dt();
     if (attackCooldown > 0) attackCooldown -= dt;
 
-    // Locate player in the scene (O(1) fast lookup)
+    // Localiza al jugador en la escena (búsqueda rápida en O(1))
     const player = gameState.player || k.get("player")[0];
     let dx = 0;
     let dy = 0;
@@ -168,24 +174,24 @@ export function createSlime(k, x, y, patrolRange = 80) {
       Math.abs(dy) <= 50;
 
     switch (slime.state) {
-      // 1. PATROL: Wander along platform, occasional hop, watch for intruders
+      // 1. PATRULLA: Recorre la plataforma, da saltos ocasionales y vigila intrusos
       case "patrol": {
         slime.move(patrolSpeed * dir, 0);
-        // Default sprite in slime.png faces right, so flip horizontally (flipX = true) when moving left (dir < 0)
+        // El sprite en slime.png mira a la derecha por defecto; se voltea al ir a la izquierda (dir < 0)
         slime.flipX = dir < 0;
 
         if (slime.isGrounded() && slime.curAnim() !== "walk") {
           slime.play("walk");
         }
 
-        // Boundary turnaround
+        // Giro al alcanzar los límites de patrulla
         if (slime.pos.x < startX - patrolRange) {
           dir = 1;
         } else if (slime.pos.x > startX + patrolRange) {
           dir = -1;
         }
 
-        // Periodic natural hop
+        // Salto natural periódico
         hopTimer -= dt;
         if (hopTimer <= 0 && slime.isGrounded()) {
           slime.jump(130);
@@ -193,7 +199,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
           hopTimer = 3.0 + Math.random() * 1.5;
         }
 
-        // Trigger alert if player steps into sight
+        // Pasa a alerta si el jugador entra en el campo de visión
         if (playerInSight) {
           slime.state = "alert";
           slime.play("idle");
@@ -207,7 +213,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
         break;
       }
 
-      // 2. ALERT: Momentary freeze reaction when discovering the player
+      // 2. ALERTA: Breve pausa de reacción al descubrir al jugador
       case "alert": {
         if (player) {
           dir = dx >= 0 ? 1 : -1;
@@ -216,26 +222,26 @@ export function createSlime(k, x, y, patrolRange = 80) {
         break;
       }
 
-      // 3. CHASE: Actively stalk and close the distance with the player
+      // 3. PERSECUCIÓN: Acorta distancia activamente hacia el jugador
       case "chase": {
         if (!player || dist > visionDistance * 1.6) {
-          // Player escaped; return to patrol
+          // El jugador escapó; vuelve a patrullar
           slime.state = "patrol";
           break;
         }
 
-        // Steer toward player
+        // Orienta el movimiento hacia el jugador
         dir = dx >= 0 ? 1 : -1;
         slime.flipX = dir < 0;
 
-        // Check if close enough for an attack lunge (only if player is at ground level, not jumping overhead)
+        // Comprueba si está a distancia de embestida (solo si el jugador está a nivel del suelo)
         const playerAtLungeLevel = dy >= -10 && dy <= 24;
         if (Math.abs(dx) <= attackDistance && playerAtLungeLevel && attackCooldown <= 0) {
           slime.state = "attack";
           attackCooldown = 2.0;
           slime.play("attack");
 
-          // Aggressive lunge forward with a low hop
+          // Embestida agresiva hacia adelante con un salto bajo
           if (slime.isGrounded()) {
             slime.jump(135);
           }
@@ -249,7 +255,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
           break;
         }
 
-        // Move actively toward player
+        // Avanza activamente hacia el jugador
         slime.move(chaseSpeed * dir, 0);
 
         if (slime.isGrounded() && slime.curAnim() !== "walk") {
@@ -258,20 +264,20 @@ export function createSlime(k, x, y, patrolRange = 80) {
         break;
       }
 
-      // 4. ATTACK: Forward momentum during bite/lunge
+      // 4. ATAQUE: Impulso frontal durante la mordida/embestida
       case "attack": {
         slime.move(dir * (chaseSpeed * 0.7), 0);
         break;
       }
 
-      // 5. HURT: Recoiling, handled by timer in takeDamage()
+      // 5. HERIDO: Retroceso gestionado por el temporizador en takeDamage()
       case "hurt": {
         break;
       }
     }
   });
 
-  // Floor seam protection: prevent SAT from displacing enemy horizontally on flat floor joints
+  // Protección de uniones del suelo: evita desplazamientos horizontales en junturas planas
   slime.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
     if (col.target.pos.y >= slime.pos.y && col.displacement.x !== 0) {
@@ -279,7 +285,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
     }
   });
 
-  // Solid obstacle collision: reverse direction on lateral wall impact (only on walls at waist/head height)
+  // Colisión con obstáculos sólidos: invierte la dirección al chocar contra muros laterales
   slime.onCollide("solid", (obj, col) => {
     if (obj.pos.y < slime.pos.y + 4) {
       if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
@@ -289,7 +295,7 @@ export function createSlime(k, x, y, patrolRange = 80) {
     }
   });
 
-  // React to player melee attack sword hitbox
+  // Reacciona al hitbox de la espada del jugador
   slime.onCollide("sword_hitbox", (hitbox) => {
     slime.takeDamage(1, hitbox.pos.x);
   });

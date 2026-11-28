@@ -5,17 +5,17 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Secret Bonus Dungeon: "La Cripta Carmesí de las Llamas"
- * 
- * Features & Architecture:
- * - Triggered when entering the catacomb portal with the Red Grimoire (book_red).
- * - Full performance optimization: zero-allocation frustum culling on static tilemap.
- * - Continuous consolidated colliders for ground, walls, and platforms (prevents floor phasing).
- * - Deep foundation bedrock on row 14 to eliminate physics tunneling.
- * - Horizontal moving platform across the abyss with zero-allocation passenger dragging.
- * - Rewards player with +500 bonus points and returns safely to Level 2.
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Mazmorra secreta de bonificación: "La Cripta Carmesí de las Llamas".
+ *
+ * Características y arquitectura:
+ * - Se activa al entrar al portal de las catacumbas con el Grimorio Carmesí (`book_red`).
+ * - Optimización completa: recorte por frustum sin asignaciones en el tilemap estático.
+ * - Colisionadores continuos consolidados para suelo, muros y plataformas.
+ * - Cimiento profundo en la fila 14 para evitar que los cuerpos atraviesen el suelo.
+ * - Plataforma móvil horizontal sobre el abismo con arrastre del jugador.
+ * - Recompensa al jugador con +500 puntos de bono y lo devuelve al Nivel 2.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initDungeonRed(k) {
   k.scene("dungeon_red", () => {
@@ -28,7 +28,7 @@ export function initDungeonRed(k) {
     const mapWidth = cols * tileSize;   // 960 px
     const mapHeight = rows * tileSize; // 360 px
 
-    // --- Atmospheric Magma Cavern Background ---
+    // --- Fondo atmosférico de caverna de magma ---
     k.add([
       k.sprite("bg_level2"),
       k.pos(0, 0),
@@ -38,7 +38,7 @@ export function initDungeonRed(k) {
       k.z(-10)
     ]);
 
-    // Ominous fiery red tint overlay
+    // Tinte rojo ígneo sobre el fondo
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -48,7 +48,7 @@ export function initDungeonRed(k) {
       k.z(-8)
     ]);
 
-    // Hint banner under HUD
+    // Cartel de pista bajo el HUD
     k.add([
       k.rect(520, 20),
       k.pos(k.width() / 2, 48),
@@ -71,7 +71,7 @@ export function initDungeonRed(k) {
       k.z(81)
     ]);
 
-    // 40 columns x 15 rows map
+    // Mapa de 40 columnas x 15 filas
     const mapLayout = [
       "                                        ", // 0
       "                                        ", // 1
@@ -93,7 +93,13 @@ export function initDungeonRed(k) {
     let player = null;
     const enemies = [];
 
-    // Helper for score/text popups
+    /**
+     * Muestra un texto flotante ascendente con puntos o avisos.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 80)) {
       const popup = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -108,7 +114,7 @@ export function initDungeonRed(k) {
       k.wait(0.6, () => popup.destroy());
     }
 
-    // Pre-calculate visual tiles grouped by column for frustum culling
+    // Precalcula los tiles visuales agrupados por columna para recorte por frustum
     const visualCols = Array.from({ length: cols }, () => []);
     const groundSegments = [];
     const wallSegments = [];
@@ -119,7 +125,7 @@ export function initDungeonRed(k) {
     let movingPlatX = 21 * tileSize;
     let movingPlatY = 10 * tileSize;
 
-    // Parse map layout
+    // Analiza el diseño del mapa
     for (let row = 0; row < rows; row++) {
       const line = mapLayout[row];
       let col = 0;
@@ -214,7 +220,7 @@ export function initDungeonRed(k) {
               break;
 
             case "E":
-              // Completely invisible secret entrance trigger to Easter Egg Creep
+              // Activador oculto e invisible hacia la dimensión secreta
               k.add([
                 k.rect(tileSize, tileSize * 2),
                 k.pos(x, y),
@@ -251,7 +257,7 @@ export function initDungeonRed(k) {
       }
     }
 
-    // --- Dedicated Frustum-Culled Tilemap Renderer ---
+    // --- Renderizador de tilemap con recorte por frustum ---
     const tilemap = k.add([k.z(1)]);
     const tileScale = k.vec2(tileSize / 16, tileSize / 16);
 
@@ -273,10 +279,10 @@ export function initDungeonRed(k) {
       }
     });
 
-    // --- Consolidated Static Physics Colliders (Zero Seam Hitching & Zero Phasing) ---
+    // --- Colisionadores físicos estáticos consolidados ---
 
-    // 1. Continuous Ground Colliders
-    // Extends bottom foundation ground (row 14) 120px deep to completely eliminate physics tunneling
+    // 1. Colisionadores continuos de suelo
+    // Extiende el cimiento inferior (fila 14) 120 px hacia abajo para evitar atravesar el suelo
     for (const seg of groundSegments) {
       const height = seg.row === 14 ? 120 : tileSize;
       k.add([
@@ -290,7 +296,7 @@ export function initDungeonRed(k) {
       ]);
     }
 
-    // 2. Continuous Wall Colliders
+    // 2. Colisionadores continuos de muros
     for (const seg of wallSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -303,7 +309,7 @@ export function initDungeonRed(k) {
       ]);
     }
 
-    // 3. Continuous Platform Colliders (Solid Ground)
+    // 3. Colisionadores continuos de plataformas (suelo sólido)
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -317,7 +323,7 @@ export function initDungeonRed(k) {
       ]);
     }
 
-    // 4. Map Boundaries (Lateral Walls)
+    // 4. Límites laterales del mapa
     k.add([
       k.rect(48, mapHeight + 600),
       k.pos(-48, -300),
@@ -338,7 +344,7 @@ export function initDungeonRed(k) {
       "wall"
     ]);
 
-    // --- Horizontal Moving Platform (Zero-Allocation Performance) ---
+    // --- Plataforma móvil horizontal ---
     const movingPlat = k.add([
       k.sprite("wood_platform"),
       k.pos(movingPlatX, movingPlatY),
@@ -359,7 +365,7 @@ export function initDungeonRed(k) {
       movingPlat.pos.x = movingPlat.baseX + Math.sin(k.time() * 2) * 52;
       movingPlat.deltaX = movingPlat.pos.x - prevX;
 
-      // Drag player if standing on the platform (fast check without bbox allocations)
+      // Arrastra al jugador cuando está apoyado sobre la plataforma
       if (player && player.isGrounded()) {
         const platWidth = tileSize * (tileSize / 16);
         const isStanding =
@@ -373,7 +379,7 @@ export function initDungeonRed(k) {
       }
     });
 
-    // Animated glowing label above Return Portal
+    // Etiqueta animada sobre el portal de retorno
     const portalLabel = k.add([
       k.text("RETORNO", { font: "pressstart", size: 8 }),
       k.pos(38 * tileSize + 12, 4 * tileSize - 10),
@@ -385,15 +391,15 @@ export function initDungeonRed(k) {
       portalLabel.opacity = k.wave(0.5, 1, k.time() * 4);
     });
 
-    // Spawn player
+    // Aparición del jugador
     player = createPlayer(k, playerSpawnX, playerSpawnY, true);
 
-    // Initialize HUD
+    // Inicializa el HUD
     createHUD(k, "Cripta Carmesí");
 
-    // --- Interactive Collisions & Triggers ---
+    // --- Colisiones y disparadores interactivos ---
 
-    // 1. Coins & Collectibles
+    // 1. Monedas y coleccionables
     player.onCollide("coin", (coin) => {
       coin.destroy();
       k.play("coin");
@@ -408,7 +414,7 @@ export function initDungeonRed(k) {
       showPopup(gem.pos, "+250", k.rgb(120, 240, 255));
     });
 
-    // 2. Hazards & Springs
+    // 2. Peligros y trampolines
     player.onCollide("spikes", () => {
       player.receiveDamage(0);
     });
@@ -423,7 +429,7 @@ export function initDungeonRed(k) {
       });
     });
 
-    // 3. Enemy Interaction (Stomp vs Shield Block vs Lateral Hit)
+    // 3. Interacción con enemigos (pisotón vs daño lateral)
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || player.isHurt) return;
 
@@ -452,7 +458,7 @@ export function initDungeonRed(k) {
       player.receiveDamage(knockDir);
     });
 
-    // 4. Return Portal Transition back to Level 2
+    // 4. Transición del portal de retorno al Nivel 2
     let returned = false;
     player.onCollide("return_portal", () => {
       if (returned) return;
@@ -491,14 +497,14 @@ export function initDungeonRed(k) {
       ]);
 
       k.wait(2.8, () => {
-        // Return to Level 2 with key reset so player can search for the true book
+        // Vuelve al Nivel 2 reiniciando la llave para buscar el libro verdadero
         gameState.hasKey = false;
         gameState.collectedBook = null;
         k.go("level2");
       });
     });
 
-    // 5. Secret Hidden Door Transition to Easter Egg Creep
+    // 5. Transición por la puerta secreta oculta hacia el Vacío Carmesí
     let enteredSecretCreep = false;
     player.onCollide("secret_creep_door", () => {
       if (enteredSecretCreep) return;
@@ -538,20 +544,20 @@ export function initDungeonRed(k) {
       });
     });
 
-    // --- Main Update Loop ---
+    // --- Bucle principal de actualización ---
     k.onUpdate(() => {
       if (!player) return;
 
-      // Clamping within map lateral bounds
+      // Límites laterales dentro del mapa
       if (player.pos.x < 10) player.pos.x = 10;
       else if (player.pos.x > mapWidth - 10) player.pos.x = mapWidth - 10;
 
-      // Instant fatal death if falling into the bottomless pit (gap at col 17-19)
+      // Muerte instantánea al caer al foso sin fondo (hueco en cols 17-19)
       if (player.pos.y > mapHeight + 50 && !player.isDead) {
         player.die();
       }
 
-      // Smooth horizontal camera tracking
+      // Seguimiento horizontal suave de la cámara
       const targetCamX = Math.max(k.width() / 2, Math.min(player.pos.x, mapWidth - k.width() / 2));
       k.camPos(targetCamX, k.height() / 2);
     });

@@ -1,15 +1,15 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes the on-screen HUD (Heads-Up Display).
- * Fulfills Req-3 (Score Counter), Req-4 (Lives/Hearts System), and level tracking.
+ * Crea e inicializa el HUD (interfaz en pantalla).
+ * Cumple con Req-3 (Contador de puntuación), Req-4 (Sistema de vidas/corazones) y seguimiento de nivel.
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {string} levelTitle - Name of the current level to display
- * @returns {object} HUD controller with update methods
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {string} levelTitle - Nombre del nivel actual a mostrar
+ * @returns {object} Controlador del HUD con métodos de actualización y barra de jefe
  */
 export function createHUD(k, levelTitle = "NIVEL 1") {
-  // Semi-transparent background banner for HUD
+  // Franja de fondo semitransparente para el HUD
   k.add([
     k.rect(k.width(), 36),
     k.pos(0, 0),
@@ -19,7 +19,7 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
     k.z(90)
   ]);
 
-  // Subtle bottom border for the banner
+  // Borde inferior sutil para la franja
   k.add([
     k.rect(k.width(), 2),
     k.pos(0, 36),
@@ -28,7 +28,7 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
     k.z(91)
   ]);
 
-  // --- 1. Hearts / Lives Display (Req-4) ---
+  // --- 1. Indicador de corazones / vidas (Req-4) ---
   const heartObjects = [];
   const startX = 20;
   const heartSpacing = 26;
@@ -44,17 +44,17 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
     heartObjects.push(heart);
   }
 
-  // --- 2. Key Inventory Indicator (Level 2 mechanic) ---
+  // --- 2. Indicador de llave o libro en inventario (mecánica del Nivel 2) ---
   const keyIcon = k.add([
     k.sprite("key"),
     k.pos(startX + gameState.maxLives * heartSpacing + 10, 8),
     k.scale(1.2),
     k.fixed(),
     k.z(100),
-    k.opacity(0) // Hidden until key is collected
+    k.opacity(0) // Oculto hasta recoger el objeto
   ]);
 
-  // --- 3. Current Level Label ---
+  // --- 3. Etiqueta del nivel actual ---
   const displayTitle = typeof levelTitle === "string" ? levelTitle : "NIVEL 1";
   const levelLabel = k.add([
     k.text(displayTitle.toUpperCase(), {
@@ -68,8 +68,8 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
     k.z(100)
   ]);
 
-  // --- 4. Score Counter Display (Req-3) ---
-  // Coin icon next to score
+  // --- 4. Contador de puntuación (Req-3) ---
+  // Ícono de moneda junto a la puntuación
   k.add([
     k.sprite("coin"),
     k.pos(k.width() - 120, 9),
@@ -90,9 +90,9 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
     k.z(100)
   ]);
 
-  // --- 5. Real-time update loop for HUD state ---
+  // --- 5. Bucle de actualización en tiempo real para el estado del HUD ---
   const hudUpdater = k.onUpdate(() => {
-    // Update hearts based on current lives
+    // Actualiza los corazones según las vidas actuales
     for (let i = 0; i < heartObjects.length; i++) {
       if (i < gameState.lives) {
         heartObjects[i].use(k.sprite("heart_full"));
@@ -101,11 +101,11 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
       }
     }
 
-    // Update score text with 5 leading digits
+    // Formatea el puntaje con 5 dígitos rellenados con ceros
     const formattedScore = String(gameState.score).padStart(5, "0");
     scoreLabel.text = formattedScore;
 
-    // Update key / book inventory display
+    // Actualiza el ícono de llave o libro coleccionado
     if (gameState.collectedBook === "red") {
       keyIcon.use(k.sprite("book_red"));
       keyIcon.opacity = 1;
@@ -124,14 +124,18 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
   });
 
   return {
+    /**
+     * Cancela el bucle de actualización del HUD al salir de la escena.
+     */
     destroy() {
       hudUpdater.cancel();
     },
 
     /**
-     * Creates a Boss Health Bar in the HUD for Level 3 (Req-10).
-     * @param {string} bossName - Name of the boss (e.g. "REY DEMONIO")
-     * @param {number} maxHp - Total boss hit points
+     * Crea la barra de salud del jefe en el HUD para el Nivel 3 (Req-10).
+     * @param {string} bossName - Nombre del jefe (p. ej. "REY DEMONIO")
+     * @param {number} maxHp - Puntos de vida máximos del jefe
+     * @returns {object} Controlador con método update(currentHp)
      */
     createBossBar(bossName = "REY DEMONIO", maxHp = 10) {
       const barWidth = 240;
@@ -139,7 +143,7 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
       const barX = (k.width() - barWidth) / 2;
       const barY = k.height() - 28;
 
-      // Boss name text
+      // Texto con el nombre del jefe
       k.add([
         k.text(bossName, { font: "pressstart", size: 8 }),
         k.pos(k.width() / 2, barY - 10),
@@ -149,7 +153,7 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
         k.z(100)
       ]);
 
-      // Background border
+      // Borde de fondo de la barra
       k.add([
         k.rect(barWidth + 4, barHeight + 4),
         k.pos(barX - 2, barY - 2),
@@ -158,7 +162,7 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
         k.z(98)
       ]);
 
-      // Empty bar track (dark red)
+      // Fondo vacío de la barra (rojo oscuro)
       k.add([
         k.rect(barWidth, barHeight),
         k.pos(barX, barY),
@@ -167,7 +171,7 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
         k.z(99)
       ]);
 
-      // Dynamic health fill (bright red/orange)
+      // Relleno dinámico de vida (rojo brillante)
       const healthFill = k.add([
         k.rect(barWidth, barHeight),
         k.pos(barX, barY),
@@ -177,6 +181,10 @@ export function createHUD(k, levelTitle = "NIVEL 1") {
       ]);
 
       return {
+        /**
+         * Actualiza el ancho de la barra según la vida actual del jefe.
+         * @param {number} currentHp - Vida actual del jefe
+         */
         update(currentHp) {
           const ratio = Math.max(0, currentHp / maxHp);
           healthFill.width = barWidth * ratio;

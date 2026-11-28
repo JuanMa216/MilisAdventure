@@ -4,20 +4,20 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Scene: "La Sala del Trono del Rey Demonio" (Final Boss Arena)
- * 
- * Features:
- * - The ultimate confrontation: Mili vs. Rey Demonio (Demon King).
- * - Grand Gothic throne room (27 cols x 15 rows = 648 x 360 px).
- * - Multi-tier balconies and trampolines allowing Mili to gain aerial height to stomp the boss.
- * - Dynamic HUD Boss Health Bar, cleave & ground slam mechanics, and enrage mode.
- * - Direct transition to secret level (if Easter egg score requirement met) or victory screen.
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Escena: "La Sala del Trono del Rey Demonio" (Arena del Jefe Final).
+ *
+ * Características:
+ * - El enfrentamiento definitivo: Mili contra el Rey Demonio.
+ * - Gran salón gótico del trono (27 cols x 15 filas = 648 x 360 px).
+ * - Balcones a múltiples alturas y trampolines para ganar altura y pisar al jefe.
+ * - Barra de vida del jefe en el HUD, ataques de tajo y golpe al suelo, y modo furia.
+ * - Transición directa al nivel secreto (si se alcanza el umbral de puntos) o a la pantalla de victoria.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initThrone(k) {
   k.scene("throne", () => {
-    gameState.currentLevel = 4; // Final Boss Chapter
+    gameState.currentLevel = 4; // Capítulo del jefe final
 
     const tileSize = 24;
     const cols = 27;
@@ -28,7 +28,7 @@ export function initThrone(k) {
     k.setGravity(980);
     k.camPos(k.width() / 2, k.height() / 2);
 
-    // --- Atmospheric Dark Fortress Background ---
+    // --- Fondo atmosférico de fortaleza oscura ---
     k.add([
       k.sprite("bg_level3"),
       k.pos(0, 0),
@@ -37,7 +37,7 @@ export function initThrone(k) {
       k.z(-10)
     ]);
 
-    // Ominous deep crimson overlay for the throne room
+    // Superposición carmesí oscura para la sala del trono
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -47,27 +47,26 @@ export function initThrone(k) {
       k.z(-8)
     ]);
 
-    // Throne Room Layout:
-    // Columns: 27, Rows: 15
+    // Diseño de la Sala del Trono: 27 columnas x 15 filas
     const layout = [
-      "##                       ##", // 0 Ceiling
+      "##                       ##", // 0 Techo
       "##                       ##", // 1
-      "##   H               H   ##", // 2 Restorative hearts on high balconies
-      "##  ---             ---  ##", // 3 High balconies
+      "##   H               H   ##", // 2 Corazones curativos en balcones altos
+      "##  ---             ---  ##", // 3 Balcones altos
       "##                       ##", // 4
-      "##   T       G       T   ##", // 5 Trampolines to launch above boss
-      "##  ===             ===  ##", // 6 Mid balconies
+      "##   T       G       T   ##", // 5 Trampolines para impulsarse sobre el jefe
+      "##  ===             ===  ##", // 6 Balcones medios
       "##                       ##", // 7
-      "##       ---   ---       ##", // 8 Stepping platforms for evasion
+      "##       ---   ---       ##", // 8 Plataformas de paso para esquivar
       "##                       ##", // 9
-      "##  ===             ===  ##", // 10 Side approach platforms
+      "##  ===             ===  ##", // 10 Plataformas laterales de acceso
       "##                       ##", // 11
-      "##  ^^^^           ^^^^  ##", // 12 Perimeter hazard spikes
-      "##=======================##", // 13 Main Throne Arena Floor (y = 312)
-      "###########################"  // 14 Bedrock foundation
+      "##  ^^^^           ^^^^  ##", // 12 Pinchos perimetrales de peligro
+      "##=======================##", // 13 Suelo principal de la arena (y = 312)
+      "###########################"  // 14 Cimiento sólido
     ];
 
-    // Visual tiles and segment colliders
+    // Estructuras de tiles visuales y segmentos de colisión
     const visualCols = Array.from({ length: cols }, () => []);
     const groundSegments = [];
     const wallSegments = [];
@@ -160,7 +159,7 @@ export function initThrone(k) {
       }
     }
 
-    // Frustum-culled tilemap renderer
+    // Renderizador de tilemap con recorte por frustum
     const tilemap = k.add([
       k.z(1)
     ]);
@@ -184,8 +183,8 @@ export function initThrone(k) {
       }
     });
 
-    // Consolidated Static Colliders:
-    // Left boundary
+    // Colisionadores estáticos consolidados:
+    // Límite izquierdo
     k.add([
       k.rect(48, mapHeight),
       k.pos(0, 0),
@@ -196,7 +195,7 @@ export function initThrone(k) {
       "wall"
     ]);
 
-    // Right boundary
+    // Límite derecho
     k.add([
       k.rect(48, mapHeight),
       k.pos(mapWidth - 48, 0),
@@ -207,7 +206,7 @@ export function initThrone(k) {
       "wall"
     ]);
 
-    // Bedrock base
+    // Base sólida del suelo
     k.add([
       k.rect(mapWidth, 100),
       k.pos(0, 14 * tileSize),
@@ -217,7 +216,7 @@ export function initThrone(k) {
       "solid"
     ]);
 
-    // Ground colliders
+    // Colisionadores de suelo
     for (const seg of groundSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -230,7 +229,7 @@ export function initThrone(k) {
       ]);
     }
 
-    // Platform colliders
+    // Colisionadores de plataformas
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -243,18 +242,18 @@ export function initThrone(k) {
       ]);
     }
 
-    // Initialize HUD
+    // Inicializa el HUD
     const hud = createHUD(k, "SALA DEL TRONO");
 
-    // Spawn Mili at the entrance on the left balcony
+    // Aparición de Mili en la entrada sobre el balcón izquierdo
     const player = createPlayer(k, 80, 220, true, 380);
 
-    // Spawn Boss Health Bar in the HUD
+    // Crea la barra de vida del jefe en el HUD
     const bossBar = hud.createBossBar("REY DEMONIO", 10);
 
-    // Spawn Demon King Boss at the throne on the right
+    // Aparición del jefe Rey Demonio en el trono a la derecha
     const demonBoss = createDemon(k, 450, 275, bossBar, () => {
-      // Victory Sequence callback upon boss defeat
+      // Secuencia de victoria al derrotar al jefe
       k.wait(1.5, () => {
         if (gameState.score >= gameState.secretScoreThreshold) {
           k.go("secret");
@@ -264,7 +263,7 @@ export function initThrone(k) {
       });
     });
 
-    // Dramatic Entrance Banner
+    // Cartel dramático de entrada
     const arenaBanner = k.add([
       k.text("¡SALA DEL TRONO: EL REY DEMONIO!", {
         font: "pressstart",
@@ -278,7 +277,13 @@ export function initThrone(k) {
     ]);
     k.wait(3.0, () => arenaBanner.destroy());
 
-    // Helper for floating text notifications
+    /**
+     * Muestra un texto flotante ascendente con desvanecimiento.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 100)) {
       const pop = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -294,7 +299,7 @@ export function initThrone(k) {
       });
     }
 
-    // --- Interactive Collisions & Triggers ---
+    // --- Colisiones y disparadores interactivos ---
     player.onCollide("gem", (gem) => {
       gem.destroy();
       gameState.addScore(300);
@@ -314,7 +319,7 @@ export function initThrone(k) {
       k.play("win");
     });
 
-    // Trampolines (Super jump to reach balconies and stomp boss)
+    // Trampolines (supersalto para alcanzar balcones y pisar al jefe)
     player.onCollide("spring", (spr) => {
       k.play("spring");
       player.jump(player.jumpForce * 1.45);
@@ -329,7 +334,7 @@ export function initThrone(k) {
       player.receiveDamage(0);
     });
 
-    // Combat with Demon Boss
+    // Combate contra el jefe Rey Demonio
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || enemy.isHurt) return;
 
@@ -359,7 +364,7 @@ export function initThrone(k) {
       player.receiveDamage(knockDir);
     });
 
-    // Arena lateral clamping
+    // Límite lateral de la arena para el jugador
     k.onUpdate(() => {
       if (!player) return;
       if (player.pos.x < 55) {

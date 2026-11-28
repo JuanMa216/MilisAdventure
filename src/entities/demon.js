@@ -1,16 +1,16 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes the Demon King (Rey Demonio) Final Boss for Level 3.
- * Fulfills Req-10: Boss Fight mechanics, multi-phase AI, health bar integration,
- * custom attack hitboxes, enrage mode, and victory sequence.
+ * Crea e inicializa al Jefe Final Rey Demonio (Demon King) para el Nivel 3.
+ * Cumple con Req-10: mecánicas de combate contra jefe, IA multifase, integración con barra de salud,
+ * hitboxes de ataque personalizados, modo furia y secuencia de victoria.
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - Initial X coordinate (Throne Arena)
- * @param {number} y - Initial Y coordinate
- * @param {object} bossBar - Controller from hud.createBossBar()
- * @param {Function} onDefeated - Callback invoked upon boss death
- * @returns {import("kaboom").GameObj} The Demon King game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial (Arena del Trono)
+ * @param {number} y - Coordenada Y inicial
+ * @param {object} bossBar - Controlador obtenido de hud.createBossBar()
+ * @param {Function} onDefeated - Callback invocado al derrotar al jefe
+ * @returns {import("kaboom").GameObj} Objeto de juego del Rey Demonio
  */
 export function createDemon(k, x, y, bossBar, onDefeated) {
   let dir = -1;
@@ -26,9 +26,9 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
   const demon = k.add([
     k.sprite("demon", { anim: "idle" }),
     k.pos(x, y),
-    // Scale demon to 1.8x (around 36px visual height, imposing boss stature)
+    // Escala al demonio a 1.8x (~36px de altura visual, estatura imponente de jefe)
     k.scale(1.8),
-    // Precision hitbox calibrated to feet (y=+9 in 100x100 frame) and horns (y=-11)
+    // Hitbox de precisión calibrado con los pies (y=+9 en cuadro 100x100) y los cuernos (y=-11)
     k.area({ shape: new k.Rect(k.vec2(2, -1), 20, 20) }),
     k.body({ maxVelocity: 400 }),
     k.anchor("center"),
@@ -43,7 +43,11 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
       isDead: false,
       isHurt: false,
 
-      // Take damage from player sword melee or stomp
+      /**
+       * Aplica daño al jefe por ataques de espada o pisotón del jugador.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Coordenada X del atacante para calcular el retroceso
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp -= dmg;
@@ -51,13 +55,13 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
 
         k.play("hit");
 
-        // Update HUD boss health bar
+        // Actualiza la barra de salud del jefe en el HUD
         const bar = this.bossBar || bossBar;
         if (bar && bar.update) {
           bar.update(this.hp);
         }
 
-        // Damage indicator popup
+        // Indicador flotante de daño
         const dmgPopup = k.add([
           k.text(`-${dmg}`, { font: "pressstart", size: 9 }),
           k.pos(this.pos.x, this.pos.y - 28),
@@ -71,23 +75,23 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
           if (dmgPopup.opacity <= 0) dmgPopup.destroy();
         });
 
-        // Check if dead
+        // Verifica si ha sido derrotado
         if (this.hp <= 0) {
           this.die();
           return;
         }
 
-        // Trigger Phase 2: Enrage mode at 50% HP or lower
+        // Activa la Fase 2 (Modo Cólera) al bajar al 50% de vida o menos
         if (!this.isEnraged && this.hp <= this.maxHp / 2) {
           this.triggerEnrage();
         }
 
-        // Hurt state & brief invincibility frame
+        // Estado de daño y breve invulnerabilidad
         this.isHurt = true;
         this.color = k.rgb(255, 80, 80);
         k.shake(4);
 
-        // Knockback resistance (boss only budges slightly)
+        // Resistencia al retroceso (el jefe apenas retrocede)
         const knockDir = this.pos.x >= fromX ? 1 : -1;
         this.move(knockDir * 40, 0);
 
@@ -98,13 +102,15 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         });
       },
 
-      // Phase 2: Enraged state
+      /**
+       * Activa la Fase 2: estado de cólera con mayor velocidad y agresividad.
+       */
       triggerEnrage() {
         this.isEnraged = true;
         this.color = k.rgb(255, 120, 120);
         k.shake(8);
 
-        // Roar announcement popup
+        // Aviso en pantalla de cambio de fase
         const roarBanner = k.add([
           k.text("¡EL REY DEMONIO ENTRA EN CÓLERA!", {
             font: "pressstart",
@@ -119,7 +125,10 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         k.wait(2.5, () => roarBanner.destroy());
       },
 
-      // Perform Cleave attack (attack1)
+      /**
+       * Ejecuta el ataque de tajo frontal (attack1) hacia la posición objetivo.
+       * @param {number} targetX - Coordenada X del jugador objetivo
+       */
       performAttack1(targetX) {
         if (isAttacking || this.isDead || this.isHurt) return;
         isAttacking = true;
@@ -127,7 +136,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         this.flipX = dir < 0;
         this.play("attack1");
 
-        // Spawn damaging hitbox during strike frame
+        // Genera el hitbox de daño durante el cuadro de impacto
         k.wait(0.2, () => {
           if (this.isDead) return;
           k.play("hit");
@@ -154,7 +163,10 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         });
       },
 
-      // Perform Heavy Ground Slam (attack2)
+      /**
+       * Ejecuta el golpe pesado contra el suelo (attack2) generando onda expansiva.
+       * @param {number} targetX - Coordenada X del jugador objetivo
+       */
       performAttack2(targetX) {
         if (isAttacking || this.isDead || this.isHurt) return;
         isAttacking = true;
@@ -162,7 +174,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         this.flipX = dir < 0;
         this.play("attack2");
 
-        // Ground slam creates shockwave
+        // El impacto contra el suelo provoca sacudida de cámara
         k.wait(0.3, () => {
           if (this.isDead) return;
           k.shake(this.isEnraged ? 7 : 5);
@@ -190,7 +202,9 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         });
       },
 
-      // Boss Defeat Sequence
+      /**
+       * Ejecuta la secuencia de derrota del jefe, otorga +2500 puntos y llama a onDefeated.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -205,7 +219,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         k.play("win");
         gameState.addScore(2500);
 
-        // Slow death effect & call victory callback
+        // Efecto de muerte lenta y llamada al callback de victoria
         this.color = k.rgb(180, 50, 50);
 
         k.wait(2.2, () => {
@@ -217,11 +231,11 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
     }
   ]);
 
-  // Main Boss AI Update Loop
+  // Bucle principal de la IA del jefe
   demon.onUpdate(() => {
     if (demon.isDead) return;
 
-    // Safety: prevent physics tunneling through throne arena
+    // Seguridad: evita atravesar el suelo de la arena del trono por caída rápida
     if (demon.vel && demon.vel.y > 400) {
       demon.vel.y = 400;
     }
@@ -230,7 +244,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
       attackCooldown -= k.dt();
     }
 
-    // Aura pulse when enraged
+    // Pulso de aura roja cuando está enfurecido
     if (demon.isEnraged) {
       const pulse = k.wave(180, 255, k.time() * 8);
       demon.color = k.rgb(255, pulse * 0.4, pulse * 0.4);
@@ -238,7 +252,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
 
     if (isAttacking || demon.isHurt) return;
 
-    // Look for player in arena (O(1) fast lookup)
+    // Busca al jugador en la arena (búsqueda rápida en O(1))
     const player = gameState.player || k.get("player")[0];
     if (!player || player.isDead) {
       if (demon.curAnim() !== "idle") demon.play("idle");
@@ -248,14 +262,14 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
     const dist = Math.abs(player.pos.x - demon.pos.x);
     const vertDist = Math.abs(player.pos.y - demon.pos.y);
 
-    // Only engage if player is on or near the throne platform
+    // Solo entra en combate si el jugador está sobre o cerca de la plataforma del trono
     if (dist < visionDistance && vertDist < 120) {
       dir = player.pos.x < demon.pos.x ? -1 : 1;
       demon.flipX = dir < 0;
 
-      // In attack range
+      // Dentro del rango de ataque
       if (dist <= attackDistance && attackCooldown <= 0) {
-        // Alternate or randomly pick attack pattern
+        // Alterna o elige aleatoriamente el patrón de ataque
         if (Math.random() < 0.55 || !demon.isEnraged) {
           demon.performAttack1(player.pos.x);
         } else {
@@ -264,7 +278,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         return;
       }
 
-      // Approach player across the arena
+      // Se acerca al jugador por la arena
       if (dist > attackDistance) {
         const currentSpeed = demon.isEnraged ? enragedSpeed : normalSpeed;
         demon.move(dir * currentSpeed, 0);
@@ -282,7 +296,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
         demon.play("idle");
       }
     }
-    // Keep Demon King strictly within his grand throne platform bounds (cols 6..22)
+    // Mantiene al Rey Demonio estrictamente dentro de los límites de su trono (cols 6..22)
     const minThroneX = 160;
     const maxThroneX = 512;
     if (demon.pos.x < minThroneX) {
@@ -292,7 +306,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
     }
   });
 
-  // Handle sword melee attacks from player
+  // Gestiona los impactos de la espada del jugador
   demon.onCollide("sword_hitbox", (hitbox) => {
     if (demon.isDead || demon.isHurt) return;
     const player = gameState.player || k.get("player")[0];
@@ -300,7 +314,7 @@ export function createDemon(k, x, y, bossBar, onDefeated) {
     demon.takeDamage(1, fromX);
   });
 
-  // Default facing direction (towards throne entrance on left)
+  // Dirección inicial por defecto (mirando hacia la entrada del trono a la izquierda)
   demon.flipX = true;
 
   return demon;

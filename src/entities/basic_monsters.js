@@ -1,21 +1,22 @@
 import { gameState } from "../state.js";
 
 /**
- * Basic Monster Entities from the Basic Asset Pack:
- * - Bloodshot Eye: Aerial floating/hovering sentry with sinusoidal patrol (3 HP)
- * - Red Cap: Quick and aggressive subterranean skirmisher (3 HP)
- * - Crushing Cyclops: Mighty brute with dynamic overhead health bar (6 HP)
- * - Stone Troll: Heavy armored guardian with overhead health bar (5 HP)
+ * Entidades de Monstruos Básicos del Basic Asset Pack:
+ * - Bloodshot Eye (Ojo Inyectado en Sangre): Centinela aéreo flotante con patrulla sinusoidal (3 HP)
+ * - Red Cap (Gorro Rojo): Hostigador subterráneo rápido y agresivo (3 HP)
+ * - Crushing Cyclops (Cíclope Aplastador): Bruto poderoso con barra de salud dinámica superior (6 HP)
+ * - Stone Troll (Trol de Piedra): Guardián acorazado pesado con barra de salud superior (5 HP)
  */
 
 /**
- * Creates a floating Bloodshot Eye monster.
+ * Crea un monstruo flotante Ojo Inyectado en Sangre (Bloodshot Eye).
  * 
- * @param {import("kaboom").KaboomCtx} k 
- * @param {number} x 
- * @param {number} y 
- * @param {number} patrolRange 
- * @param {Function} onDied 
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} [patrolRange=85] - Distancia máxima de patrulla horizontal
+ * @param {Function|null} [onDied=null] - Callback opcional al morir el monstruo
+ * @returns {import("kaboom").GameObj} Objeto de juego del monstruo
  */
 export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
   let dir = -1;
@@ -38,6 +39,11 @@ export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
       isDead: false,
       isHurt: false,
 
+      /**
+       * Aplica daño al ojo flotante y muestra el texto de daño y retroceso.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Posición X del atacante para calcular la dirección del empuje
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp = Math.max(0, this.hp - dmg);
@@ -52,7 +58,7 @@ export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
           const knockDir = this.pos.x >= fromX ? 1 : -1;
           this.pos.x += knockDir * 12;
 
-          // Damage popup
+          // Indicador flotante de daño
           const dmgPopup = k.add([
             k.text(`-${dmg}`, { font: "pressstart", size: 7 }),
             k.pos(this.pos.x, this.pos.y - 14),
@@ -73,13 +79,16 @@ export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
         }
       },
 
+      /**
+       * Ejecuta la muerte del monstruo, otorga +300 puntos y genera partículas de dispersión.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
         k.play("hit");
         gameState.addScore(300);
 
-        // Score popup
+        // Texto flotante de puntuación (+300)
         const scorePopup = k.add([
           k.text("+300", { font: "pressstart", size: 8 }),
           k.pos(this.pos.x, this.pos.y - 14),
@@ -97,7 +106,7 @@ export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
 
         if (onDied) onDied(this);
 
-        // Eyeball pop effect
+        // Efecto de estallido con fragmentos
         for (let i = 0; i < 5; i++) {
           const shard = k.add([
             k.rect(3, 3),
@@ -124,10 +133,10 @@ export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
   monster.onUpdate(() => {
     if (monster.isDead || monster.isHurt) return;
 
-    // Sine-wave hovering
+    // Flotación sinusoidal vertical
     monster.pos.y = baseY + Math.sin(k.time() * 3.5 + startX) * 7;
 
-    // Horizontal patrol
+    // Patrulla horizontal
     monster.pos.x += dir * speed * k.dt();
     monster.flipX = dir > 0;
 
@@ -148,13 +157,14 @@ export function createBloodshotEye(k, x, y, patrolRange = 85, onDied = null) {
 }
 
 /**
- * Creates a nimble Red Cap goblin enemy.
+ * Crea un enemigo ágil trasgo Gorro Rojo (Red Cap).
  * 
- * @param {import("kaboom").KaboomCtx} k 
- * @param {number} x 
- * @param {number} y 
- * @param {number} patrolRange 
- * @param {Function} onDied 
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} [patrolRange=75] - Distancia máxima de patrulla
+ * @param {Function|null} [onDied=null] - Callback opcional al morir el monstruo
+ * @returns {import("kaboom").GameObj} Objeto de juego del monstruo
  */
 export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
   let dir = -1;
@@ -178,6 +188,11 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
       isDead: false,
       isHurt: false,
 
+      /**
+       * Aplica daño al trasgo con salto de retroceso e indicador flotante.
+       * @param {number} [dmg=1] - Daño recibido
+       * @param {number} [fromX=0] - Posición X del atacante
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp = Math.max(0, this.hp - dmg);
@@ -213,6 +228,9 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
         }
       },
 
+      /**
+       * Ejecuta la derrota del trasgo, otorga +400 puntos y destruye la entidad.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -245,7 +263,7 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
     const player = gameState.player;
     let curSpeed = patrolSpeed;
 
-    // Detect player in horizontal range
+    // Detecta al jugador en rango horizontal
     if (player && !player.isDead) {
       const dx = player.pos.x - monster.pos.x;
       const dy = player.pos.y - monster.pos.y;
@@ -258,7 +276,7 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
     monster.move(dir * curSpeed, 0);
     monster.flipX = dir > 0;
 
-    // Turn around at patrol limits
+    // Da la vuelta al alcanzar los límites de patrulla
     if (dir < 0 && monster.pos.x <= startX - patrolRange) {
       dir = 1;
     } else if (dir > 0 && monster.pos.x >= startX + patrolRange) {
@@ -266,7 +284,7 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
     }
   });
 
-  // Safe floor collision
+  // Colisión segura con el suelo (evita desplazamientos laterales en uniones)
   monster.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
     if (col.target.pos.y >= monster.pos.y && col.displacement.x !== 0) {
@@ -274,7 +292,7 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
     }
   });
 
-  // Turn around on wall collisions
+  // Da la vuelta al chocar contra muros sólidos
   monster.onCollide("solid", (obj, col) => {
     if (obj.pos.y < monster.pos.y + 4) {
       if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
@@ -292,13 +310,14 @@ export function createRedCap(k, x, y, patrolRange = 75, onDied = null) {
 }
 
 /**
- * Creates an imposing Crushing Cyclops brute mini-boss with overhead health bar.
+ * Crea un imponente minijefe Cíclope Aplastador (Crushing Cyclops) con barra de salud superior.
  * 
- * @param {import("kaboom").KaboomCtx} k 
- * @param {number} x 
- * @param {number} y 
- * @param {number} patrolRange 
- * @param {Function} onDied 
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} [patrolRange=70] - Distancia máxima de patrulla
+ * @param {Function|null} [onDied=null] - Callback opcional al morir el monstruo
+ * @returns {import("kaboom").GameObj} Objeto de juego del cíclope
  */
 export function createCrushingCyclops(k, x, y, patrolRange = 70, onDied = null) {
   let dir = -1;
@@ -321,6 +340,11 @@ export function createCrushingCyclops(k, x, y, patrolRange = 70, onDied = null) 
       isDead: false,
       isHurt: false,
 
+      /**
+       * Aplica daño al cíclope, actualiza su barra de vida superior y aplica retroceso.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Posición X del atacante
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp = Math.max(0, this.hp - dmg);
@@ -358,6 +382,9 @@ export function createCrushingCyclops(k, x, y, patrolRange = 70, onDied = null) 
         }
       },
 
+      /**
+       * Ejecuta la derrota del cíclope, sacude la cámara, otorga +800 puntos y oculta su barra de salud.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -389,7 +416,7 @@ export function createCrushingCyclops(k, x, y, patrolRange = 70, onDied = null) 
     }
   ]);
 
-  // Overhead HP UI
+  // Barra de salud superior sobre el monstruo
   const barWidth = 26;
   const barHeight = 3.5;
   const hpBg = k.add([
@@ -421,7 +448,7 @@ export function createCrushingCyclops(k, x, y, patrolRange = 70, onDied = null) 
   }
 
   monster.onUpdate(() => {
-    // Keep HP bar attached to monster
+    // Mantiene la barra de salud anclada sobre el monstruo
     hpBg.pos.x = monster.pos.x;
     hpBg.pos.y = monster.pos.y - 22;
     hpFill.pos.x = monster.pos.x - barWidth / 2;
@@ -465,13 +492,14 @@ export function createCrushingCyclops(k, x, y, patrolRange = 70, onDied = null) 
 }
 
 /**
- * Creates a Stone Troll guardian enemy with 5 HP.
+ * Crea un enemigo guardián Trol de Piedra (Stone Troll) con 5 HP y barra de salud superior.
  * 
- * @param {import("kaboom").KaboomCtx} k 
- * @param {number} x 
- * @param {number} y 
- * @param {number} patrolRange 
- * @param {Function} onDied 
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} [patrolRange=50] - Distancia máxima de patrulla
+ * @param {Function|null} [onDied=null] - Callback opcional al morir el monstruo
+ * @returns {import("kaboom").GameObj} Objeto de juego del trol de piedra
  */
 export function createStoneTroll(k, x, y, patrolRange = 50, onDied = null) {
   let dir = -1;
@@ -494,6 +522,11 @@ export function createStoneTroll(k, x, y, patrolRange = 50, onDied = null) {
       isDead: false,
       isHurt: false,
 
+      /**
+       * Aplica daño al trol de piedra, actualiza su barra de vida superior y aplica retroceso.
+       * @param {number} [dmg=1] - Cantidad de daño recibido
+       * @param {number} [fromX=0] - Posición X del atacante
+       */
       takeDamage(dmg = 1, fromX = 0) {
         if (this.isDead || this.isHurt) return;
         this.hp = Math.max(0, this.hp - dmg);
@@ -531,6 +564,9 @@ export function createStoneTroll(k, x, y, patrolRange = 50, onDied = null) {
         }
       },
 
+      /**
+       * Ejecuta la derrota del trol de piedra, otorga +600 puntos y oculta su barra de salud.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;

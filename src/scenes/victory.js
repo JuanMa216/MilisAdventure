@@ -1,17 +1,18 @@
 import { gameState } from "../state.js";
 
 /**
- * Victory Scene.
- * Displays final victory screen, credits, final score, and restart prompt.
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Escena de Victoria.
+ * Muestra la pantalla de triunfo final, la puntuación obtenida, el estado del Easter Egg
+ * y el acceso a los créditos finales o al reinicio de la partida.
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initVictory(k) {
   k.scene("victory", () => {
     k.camPos(k.width() / 2, k.height() / 2);
     k.play("win");
 
-    // Atmospheric celebration backdrop
+    // Fondo atmosférico de celebración
     k.add([
       k.sprite("bg_level1"),
       k.pos(0, 0),
@@ -20,7 +21,7 @@ export function initVictory(k) {
       k.z(-10)
     ]);
 
-    // Semi-transparent dark golden overlay
+    // Superposición oscura semitransparente
     k.add([
       k.rect(k.width(), k.height()),
       k.pos(0, 0),
@@ -30,7 +31,7 @@ export function initVictory(k) {
       k.z(-5)
     ]);
 
-    // Victory Title
+    // Título de victoria
     k.add([
       k.text("¡VICTORIA ÉPICA!", { font: "pressstart", size: 20 }),
       k.pos(k.width() / 2, 70),
@@ -40,7 +41,7 @@ export function initVictory(k) {
       k.z(10)
     ]);
 
-    // Lore conclusion text
+    // Texto de cierre de la historia
     k.add([
       k.text("¡El Rey Demonio ha sido purificado!", { font: "pressstart", size: 9 }),
       k.pos(k.width() / 2, 110),
@@ -62,7 +63,7 @@ export function initVictory(k) {
       k.z(10)
     ]);
 
-    // Mili hero sprite celebrating
+    // Sprite de la heroína Mili celebrando
     const hero = k.add([
       k.sprite("player", { anim: "idle" }),
       k.pos(k.width() / 2, 185),
@@ -72,7 +73,7 @@ export function initVictory(k) {
       k.z(15)
     ]);
 
-    // Final score banner
+    // Panel de puntuación final
     k.add([
       k.rect(380, 42),
       k.pos(k.width() / 2, 245),
@@ -94,7 +95,7 @@ export function initVictory(k) {
       k.z(11)
     ]);
 
-    // Easter Egg status indicator
+    // Indicador de estado del Easter Egg
     if (gameState.foundEasterEgg) {
       k.add([
         k.text("★ ¡EASTER EGG ENCONTRADO - 100% COMPLETADO! ★", {
@@ -123,7 +124,7 @@ export function initVictory(k) {
       ]);
     }
 
-    // Restart & Credits Prompt
+    // Indicaciones para ver créditos o reiniciar
     const prompt = k.add([
       k.text("Presiona ESPACIO o ENTER para ver los Créditos", {
         font: "pressstart",
@@ -148,12 +149,12 @@ export function initVictory(k) {
       k.z(10)
     ]);
 
-    // Subtle pulsing animation for prompt
+    // Animación sutil de parpadeo para el mensaje principal
     k.loop(0.6, () => {
       prompt.opacity = prompt.opacity === 1 ? 0.3 : 1;
     });
 
-    // Key handlers to open credits or restart game from Level 1
+    // Atajos de teclado para abrir los créditos o reiniciar desde el Nivel 1
     for (const key of ["space", "enter", "c"]) {
       k.onKeyPress(key, () => {
         k.go("credits");

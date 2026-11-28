@@ -13,7 +13,7 @@ import { initEasterEggCreep } from "./scenes/easteregg_creep.js";
 import { initSanctuary } from "./scenes/sanctuary.js";
 import { initCredits } from "./scenes/credits.js";
 
-// --- 1. Load Character Sprites ---
+// --- 1. Carga de Sprites de Personajes y Enemigos ---
 k.loadSprite("player", "sprites/player/mili.png", {
   sliceX: 10,
   sliceY: 8,
@@ -108,7 +108,7 @@ k.loadSprite("blood_monster", "sprites/enemies/blood_monster.png", {
   }
 });
 
-// Basic Monster Pack
+// Paquete de Monstruos Básicos (Basic Asset Pack)
 k.loadSprite("bloodshot_eye", "sprites/enemies/basic/bloodshot_eye.png", {
   sliceX: 4,
   sliceY: 1,
@@ -141,26 +141,26 @@ k.loadSprite("stone_troll", "sprites/enemies/basic/stone_troll.png", {
   }
 });
 
-// --- 2. RottingPixels Dark Fantasy Medieval Tilesets ---
-// Castle (Level 1)
+// --- 2. Tilesets Medievales de Fantasía Oscura (RottingPixels) ---
+// Castillo (Nivel 1)
 k.loadSprite("stone_top", "sprites/tiles/stone_top.png");
 k.loadSprite("stone_wall", "sprites/tiles/stone_wall.png");
 k.loadSprite("wood_platform", "sprites/tiles/wood_platform.png");
 k.loadSprite("castle_spikes", "sprites/hazards/castle_spikes.png");
 
-// Cave (Level 2)
+// Cueva (Nivel 2)
 k.loadSprite("cave_top", "sprites/tiles/cave_top.png");
 k.loadSprite("cave_wall", "sprites/tiles/cave_wall.png");
 k.loadSprite("cave_spikes", "sprites/hazards/cave_spikes.png");
 
-// Dungeon / Fortress (Level 3)
+// Mazmorra / Fortaleza (Nivel 3)
 k.loadSprite("dungeon_top", "sprites/tiles/dungeon_top.png");
 k.loadSprite("dungeon_wall", "sprites/tiles/dungeon_wall.png");
 k.loadSprite("dungeon_platform", "sprites/tiles/dungeon_platform.png");
 k.loadSprite("dungeon_platform_2x", "sprites/tiles/dungeon_platform_2x.png");
 k.loadSprite("dungeon_spikes", "sprites/hazards/dungeon_spikes.png");
 
-// Collectibles, Items & Props
+// Coleccionables, Objetos y Decoración
 k.loadSprite("coin", "sprites/items/coin.png");
 k.loadSprite("gem", "sprites/items/gem.png");
 k.loadSprite("key", "sprites/items/key.png");
@@ -174,7 +174,7 @@ k.loadSprite("flower_vase", "sprites/decorations/flower_vase.png");
 k.loadSprite("heart_full", "sprites/items/heart_full.png");
 k.loadSprite("heart_empty", "sprites/items/heart_empty.png");
 
-// --- 3. Atmospheric Dark Fantasy Backgrounds ---
+// --- 3. Fondos Atmosféricos ---
 k.loadSprite("bg_level1", "sprites/backgrounds/bg_level1.png");
 k.loadSprite("bg_level2", "sprites/backgrounds/bg_level2.png");
 k.loadSprite("bg_level3", "sprites/backgrounds/bg_level3.png");
@@ -182,18 +182,18 @@ k.loadSprite("bg_secret", "sprites/backgrounds/easter_egg.jpg");
 k.loadSprite("bg_easteregg_face", "sprites/backgrounds/easter_egg_face.jpg");
 k.loadSprite("bg_sanctuary", "sprites/backgrounds/sanctuary_bg.jpg");
 
-// --- 4. Retro Audio ---
+// --- 4. Audio Retro ---
 k.loadSound("jump", "sounds/jump.wav");
 k.loadSound("coin", "sounds/coin.wav");
 k.loadSound("hit", "sounds/hit.wav");
 k.loadSound("spring", "sounds/spring.wav");
 k.loadSound("win", "sounds/win.wav");
 
-// --- 5. Retro Pixel Fonts ---
+// --- 5. Fuentes Pixel Art Retro ---
 k.loadFont("pressstart", "fonts/PressStart2P.ttf");
 k.loadFont("vt323", "fonts/VT323.ttf");
 
-// --- 6. Scene Management ---
+// --- 6. Registro e Inicialización de Escenas ---
 initLevel1(k);
 initLevel2(k);
 initLevel3(k);
@@ -207,11 +207,11 @@ initEasterEggCreep(k);
 initSanctuary(k);
 initCredits(k);
 
-// Start at Level 1, or Level 2 / Level 3 / Throne / Secret via URL query param (?level=2, ?level=3, ?level=throne, ?level=secret)
+// Inicia en Nivel 1 o permite saltar a una escena específica mediante parámetro URL (?level=2, ?level=credits, etc.)
 const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 const levelParam = urlParams?.get("level");
 
-// Test flag: ?vases=all unlocks the secret door in dungeon_green immediately
+// Bandera de prueba: ?vases=all desbloquea directamente la puerta secreta en dungeon_green
 if (urlParams?.get("vases") === "all" || urlParams?.get("allVases") === "true") {
   gameState.allVasesDestroyed = true;
   gameState.vasesBrokenCount = 4;

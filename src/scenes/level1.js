@@ -5,16 +5,16 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Level 1: "Castillo y Ruinas Medievales"
- * 
- * Uses the authentic RottingPixels medieval castle tileset:
- * - Stone brick floor (stone_top)
- * - Castle masonry wall (stone_wall)
- * - Wooden beam platforms (wood_platform)
- * - Castle iron spikes (castle_spikes)
- * - Shield Block + Jump mechanics (Req-5)
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * Nivel 1: "Castillo y Ruinas Medievales".
+ *
+ * Utiliza el tileset medieval de RottingPixels:
+ * - Suelo de ladrillo de piedra (`stone_top`)
+ * - Muros de mampostería del castillo (`stone_wall`)
+ * - Plataformas de vigas de madera (`wood_platform`)
+ * - Pinchos de hierro del castillo (`castle_spikes`)
+ * - Mecánicas de bloqueo con escudo y salto
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initLevel1(k) {
   k.scene("level1", () => {
@@ -22,11 +22,11 @@ export function initLevel1(k) {
     gameState.vasesBrokenCount = 0;
     gameState.allVasesDestroyed = false;
 
-    // Reset camera and gravity
+    // Reinicia la cámara y la gravedad
     k.setGravity(980);
     k.camPos(k.width() / 2, k.height() / 2);
 
-    // --- Req-8: Twilight Castle Background ---
+    // --- Fondo del castillo al crepúsculo ---
     k.add([
       k.sprite("bg_level1"),
       k.pos(0, 0),
@@ -35,7 +35,7 @@ export function initLevel1(k) {
       k.z(-10)
     ]);
 
-    // Discrete controls hint under HUD banner
+    // Aviso discreto de controles debajo del HUD
     k.add([
       k.rect(460, 20),
       k.pos(k.width() / 2, 48),
@@ -58,8 +58,8 @@ export function initLevel1(k) {
       k.z(81)
     ]);
 
-    // --- Level Layout (ASCII Grid) ---
-    // Tile size: 24x24 px. 15 rows = 360 px
+    // --- Diseño del nivel (cuadrícula ASCII) ---
+    // Tamaño de tile: 24x24 px. 15 filas = 360 px
     const mapLayout = [
       "                                                                            ",
       "                                                                            ",
@@ -87,7 +87,7 @@ export function initLevel1(k) {
     let player = null;
     const slimes = [];
 
-    // Count total breakable flower vases in level
+    // Cuenta el total de jarrones rompibles en el nivel
     let totalVasesInLevel = 0;
     for (const r of mapLayout) {
       for (const ch of r) {
@@ -95,7 +95,12 @@ export function initLevel1(k) {
       }
     }
 
-    // Helper to spawn floating score text
+    /**
+     * Muestra un texto flotante ascendente con la puntuación obtenida.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {number|string} pts - Puntos o etiqueta a mostrar
+     */
     function showScorePopup(pos, pts) {
       const popup = k.add([
         k.text(`+${pts}`, { font: "pressstart", size: 8 }),
@@ -110,13 +115,13 @@ export function initLevel1(k) {
       k.wait(0.5, () => popup.destroy());
     }
 
-    // Pre-calculate visual tiles grouped by column for zero-allocation horizontal frustum culling
+    // Precalcula los tiles visuales agrupados por columna para recorte horizontal sin asignaciones
     const visualCols = Array.from({ length: cols }, () => []);
     const groundSegments = [];
     const wallSegments = [];
     const platformSegments = [];
 
-    // Parse the map layout
+    // Analiza el diseño del mapa
     for (let row = 0; row < rows; row++) {
       const line = mapLayout[row];
       let col = 0;
@@ -151,10 +156,10 @@ export function initLevel1(k) {
           const length = col - startCol;
           platformSegments.push({ row, col: startCol, len: length });
         } else {
-          // Interactive objects
+          // Objetos interactivos
           switch (char) {
             case "V":
-              // Breakable decorative flower vase (sword-breakable with shards and rewards)
+              // Jarrón decorativo rompible con espada (suelta fragmentos y recompensas)
               createFlowerVase(k, x + 12, y + 12, showScorePopup, () => {
                 gameState.vasesBrokenCount++;
                 if (gameState.vasesBrokenCount >= totalVasesInLevel) {
@@ -174,7 +179,7 @@ export function initLevel1(k) {
               break;
 
             case "$":
-              // Coin (+100 points)
+              // Moneda (+100 puntos)
               k.add([
                 k.sprite("coin"),
                 k.pos(x + 12, y + 12),
@@ -187,7 +192,7 @@ export function initLevel1(k) {
               break;
 
             case "G":
-              // Gem (+250 points)
+              // Gema (+250 puntos)
               k.add([
                 k.sprite("gem"),
                 k.pos(x + 12, y + 12),
@@ -200,7 +205,7 @@ export function initLevel1(k) {
               break;
 
             case "^":
-              // Castle iron spikes (precise player-favorable hazard hitbox)
+              // Pinchos de hierro del castillo (hitbox ajustada a favor del jugador)
               k.add([
                 k.sprite("castle_spikes"),
                 k.pos(x, y),
@@ -213,7 +218,7 @@ export function initLevel1(k) {
               break;
 
             case "T":
-              // Trampoline / Spring mechanic
+              // Trampolín / resorte de impulso
               k.add([
                 k.sprite("spring"),
                 k.pos(x, y),
@@ -225,7 +230,7 @@ export function initLevel1(k) {
               break;
 
             case "D":
-              // Level exit door (Authentic medieval arched wooden door, 16x32)
+              // Puerta de salida del nivel (puerta medieval arqueada de madera, 16x32)
               k.add([
                 k.sprite("door_closed"),
                 k.pos(x, y),
@@ -244,9 +249,8 @@ export function initLevel1(k) {
       }
     }
 
-    // Dedicated frustum-culled tilemap renderer:
-    // Only draws columns visible within horizontal viewport (+48px padding)
-    // Zero WebGL draw calls for off-screen tiles!
+    // Renderizador de tilemap con recorte por frustum:
+    // Solo dibuja columnas visibles dentro del viewport horizontal (+48 px de margen)
     const tilemap = k.add([
       k.z(1)
     ]);
@@ -270,10 +274,10 @@ export function initLevel1(k) {
       }
     });
 
-    // Consolidated Static Physics Colliders:
-    // Replaces 154 individual tile bodies with 24 seamless bodies!
+    // Colisionadores físicos estáticos consolidados:
+    // Reemplaza cuerpos individuales por segmentos continuos sin costuras
 
-    // 1. Consolidated Ground Colliders (Continuous seamless rectangles for all '=' segments)
+    // 1. Colisionadores consolidados de suelo (segmentos '=')
     for (const seg of groundSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -286,7 +290,7 @@ export function initLevel1(k) {
       ]);
     }
 
-    // 2. Consolidated Wall Colliders (Continuous seamless rectangles for all '#' segments)
+    // 2. Colisionadores consolidados de muros (segmentos '#')
     for (const seg of wallSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -299,7 +303,7 @@ export function initLevel1(k) {
       ]);
     }
 
-    // 3. Consolidated Platform Colliders (Continuous seamless rectangles for all '-' segments)
+    // 3. Colisionadores consolidados de plataformas (segmentos '-')
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -313,10 +317,10 @@ export function initLevel1(k) {
       ]);
     }
 
-    // --- Map Boundaries (Req-5) ---
-    // Prevent player and enemies from falling off the start (left) or end (right) of the map
+    // --- Límites del mapa ---
+    // Evitan que el jugador y los enemigos salgan por los extremos izquierdo o derecho
 
-    // Left solid boundary (x <= 0)
+    // Límite sólido izquierdo (x <= 0)
     k.add([
       k.rect(32, mapHeight + 600),
       k.pos(-32, -300),
@@ -327,7 +331,7 @@ export function initLevel1(k) {
       "boundary"
     ]);
 
-    // Right solid boundary (x >= mapWidth)
+    // Límite sólido derecho (x >= mapWidth)
     k.add([
       k.rect(32, mapHeight + 600),
       k.pos(mapWidth, -300),
@@ -338,7 +342,7 @@ export function initLevel1(k) {
       "boundary"
     ]);
 
-    // Solid foundation bedrock under ground tiles to prevent physics tunneling
+    // Base sólida bajo los tiles del suelo para evitar atravesar la física
     k.add([
       k.rect(480, 100),
       k.pos(0, 360),
@@ -356,7 +360,7 @@ export function initLevel1(k) {
       "solid"
     ]);
 
-    // Animated glowing "SALIDA" indicator above the castle door
+    // Indicador animado "SALIDA" sobre la puerta del castillo
     const exitLabel = k.add([
       k.text("SALIDA", { font: "pressstart", size: 8 }),
       k.pos(69 * 24 + 12, 2 * 24 - 10),
@@ -368,21 +372,21 @@ export function initLevel1(k) {
       exitLabel.opacity = k.wave(0.4, 1, k.time() * 4);
     });
 
-    // Spawn player at "@" symbol position (aligned flush with ground)
+    // Aparición del jugador en la posición '@' (apoyado sobre el suelo)
     player = createPlayer(k, 40, 322, true);
 
-    // Spawn Slime enemies resting flush on their platform surfaces
+    // Aparición de Slimes sobre las superficies de sus plataformas
     slimes.push(createSlime(k, 312, 180, 24));
     slimes.push(createSlime(k, 1008, 132, 36));
     slimes.push(createSlime(k, 1128, 204, 24));
     slimes.push(createSlime(k, 1320, 276, 24));
 
-    // Initialize HUD (Req-3 & Req-4)
+    // Inicializa el HUD
     createHUD(k, "Nivel 1: Castillo");
 
-    // --- Collisions & Interactions ---
+    // --- Colisiones e interacciones ---
 
-    // 1. Collect Coins (Req-3: Score counter)
+    // 1. Recolección de monedas (+100 pts)
     player.onCollide("coin", (coin) => {
       coin.destroy();
       k.play("coin");
@@ -390,7 +394,7 @@ export function initLevel1(k) {
       showScorePopup(coin.pos, 100);
     });
 
-    // 2. Collect Gems (Req-3: Score counter)
+    // 2. Recolección de gemas (+250 pts)
     player.onCollide("gem", (gem) => {
       gem.destroy();
       k.play("coin");
@@ -398,7 +402,7 @@ export function initLevel1(k) {
       showScorePopup(gem.pos, 250);
     });
 
-    // 2b. Collect Dropped Hearts from broken vases
+    // 2b. Recolección de corazones soltados por jarrones rotos
     player.onCollide("heart_drop", (heart) => {
       heart.destroy();
       k.play("coin");
@@ -411,40 +415,40 @@ export function initLevel1(k) {
       }
     });
 
-    // 3. Spikes Hazard (Req-4: Lose life)
+    // 3. Peligro de pinchos (quita vida)
     player.onCollide("spikes", () => {
       player.receiveDamage(0);
     });
 
-    // 4. Spring / Trampoline Mechanic (Req-5: Level mechanic)
+    // 4. Mecánica de trampolín / resorte
     player.onCollide("spring", () => {
       k.play("spring");
       player.jump(player.jumpForce * 1.5);
       player.hasDoubleJumped = false;
     });
 
-    // 5. Enemy Interaction (Req-5: Stomp vs Shield Block vs Lateral Hit)
+    // 5. Interacción con enemigos (pisotón vs bloqueo con escudo vs golpe lateral)
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead) return;
 
-      // Robust stomp check: Player is above enemy in the air or falling
+      // Comprobación de pisotón: el jugador está por encima del enemigo en el aire o cayendo
       const isStomping =
         (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
 
       if (isStomping) {
         enemy.die();
-        player.jump(player.jumpForce * 0.85); // Bounce up
+        player.jump(player.jumpForce * 0.85); // Rebote hacia arriba
         player.hasDoubleJumped = false;
         k.play("jump");
       } else {
-        // Lateral hit: Checks shield block or takes damage
+        // Golpe lateral: verifica bloqueo con escudo o aplica daño
         const knockbackDirection = player.pos.x < enemy.pos.x ? -1 : 1;
         player.receiveDamage(knockbackDirection);
       }
     });
 
-    // 6. Level Complete / Exit Door Transition
+    // 6. Nivel completado / transición por la puerta de salida
     let levelFinished = false;
     player.onCollide("exit_door", (door) => {
       if (levelFinished) return;
@@ -453,7 +457,7 @@ export function initLevel1(k) {
       door.use(k.sprite("door_open"));
       k.play("win");
 
-      // Banner message
+      // Cartel de transición
       k.add([
         k.rect(360, 60),
         k.pos(k.width() / 2, k.height() / 2),
@@ -486,18 +490,18 @@ export function initLevel1(k) {
       });
     });
 
-    // Keep player strictly within map limits and smoothly follow with camera
+    // Mantiene al jugador dentro de los límites del mapa y ajusta la cámara horizontalmente
     k.onUpdate(() => {
       if (!player) return;
 
-      // Hard clamp within map boundaries
+      // Límite estricto dentro de los bordes del mapa
       if (player.pos.x < 10) {
         player.pos.x = 10;
       } else if (player.pos.x > mapWidth - 10) {
         player.pos.x = mapWidth - 10;
       }
 
-      // Camera smoothly follows player horizontally within world bounds
+      // La cámara sigue suavemente al jugador en horizontal dentro de los límites del mundo
       const targetCamX = Math.max(k.width() / 2, Math.min(player.pos.x, mapWidth - k.width() / 2));
       k.camPos(targetCamX, k.height() / 2);
     });

@@ -1,19 +1,19 @@
 import { gameState } from "../state.js";
 
 /**
- * Creates and initializes a Basic Slime / Cavern Ooze enemy.
+ * Crea e inicializa un enemigo Slime Básico (Basic Slime / Cavern Ooze).
  * 
- * Features:
- * - 1 HP bouncy ooze enemy from Pixel Enemies pack.
- * - Squishes and lunges forward when the player gets close.
- * - Can be stomped from above or slashed with sword.
- * - Fast O(1) player tracking.
+ * Características:
+ * - Enemigo gelatinoso de 1 HP del paquete Pixel Enemies.
+ * - Se comprime y lanza hacia adelante cuando el jugador se acerca.
+ * - Puede ser derrotado saltando encima o con un corte de espada.
+ * - Seguimiento rápido del jugador en O(1).
  * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
- * @param {number} x - Initial X coordinate
- * @param {number} y - Initial Y coordinate
- * @param {number} patrolRange - Max distance to wander left/right
- * @returns {import("kaboom").GameObj} The slime game object
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
+ * @param {number} x - Coordenada X inicial
+ * @param {number} y - Coordenada Y inicial
+ * @param {number} patrolRange - Distancia máxima de patrulla hacia izquierda/derecha
+ * @returns {import("kaboom").GameObj} Objeto de juego del slime
  */
 export function createBasicSlime(k, x, y, patrolRange = 50) {
   let dir = -1;
@@ -27,7 +27,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
   const slime = k.add([
     k.sprite("slime_basic", { anim: "walk" }),
     k.pos(x, y),
-    // Frame is 96x64, slime is ~29x12 px centered. Scale 1.0 fits 24px tile scale
+    // El cuadro mide 96x64; el slime mide ~29x12 px centrado. Escala 1.0 encaja con tiles de 24px
     k.scale(1.0),
     k.area({ shape: new k.Rect(k.vec2(0, 10), 24, 12) }),
     k.body({ maxVelocity: 350 }),
@@ -41,7 +41,9 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
       isHurt: false,
       state: "patrol", // "patrol" | "attack" | "hurt" | "die"
 
-      // Slime defeated
+      /**
+       * Ejecuta la secuencia de derrota del slime, otorga puntos y destruye la entidad.
+       */
       die() {
         if (this.isDead) return;
         this.isDead = true;
@@ -50,7 +52,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
         k.play("hit");
         gameState.addScore(150);
 
-        // Score popup
+        // Texto flotante de puntuación (+150)
         const scorePopup = k.add([
           k.text("+150", { font: "pressstart", size: 8 }),
           k.pos(this.pos.x, this.pos.y - 12),
@@ -73,7 +75,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
     }
   ]);
 
-  // Slime AI Update Loop
+  // Bucle de actualización de la IA del slime
   slime.onUpdate(() => {
     if (slime.isDead) return;
 
@@ -84,7 +86,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
     const dt = k.dt();
     if (attackCooldown > 0) attackCooldown -= dt;
 
-    // Fast O(1) player lookup
+    // Búsqueda rápida del jugador en O(1)
     const player = gameState.player || k.get("player")[0];
     let dx = 0;
     let dy = 0;
@@ -105,14 +107,14 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
           slime.play("walk");
         }
 
-        // Boundary turnaround
+        // Cambio de dirección al alcanzar los límites de patrulla
         if (slime.pos.x < startX - patrolRange) {
           dir = 1;
         } else if (slime.pos.x > startX + patrolRange) {
           dir = -1;
         }
 
-        // Lunge check: player is nearby at roughly ground level
+        // Comprobación de embestida: el jugador está cerca y a nivel del suelo
         const playerAtLungeLevel = dy >= -10 && dy <= 24;
         if (Math.abs(dx) <= attackDistance && playerAtLungeLevel && attackCooldown <= 0) {
           slime.state = "attack";
@@ -121,7 +123,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
           slime.flipX = dir < 0;
           slime.play("attack");
 
-          // Short forward hop lunge
+          // Salto corto hacia adelante para embestir
           slime.jump(160);
           slime.move(dir * 90, 0);
 
@@ -144,7 +146,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
     }
   });
 
-  // Floor seam protection
+  // Protección contra uniones del suelo (evita desplazamientos horizontales indeseados)
   slime.onBeforePhysicsResolve((col) => {
     if (!col.target.is("solid")) return;
     if (col.target.pos.y >= slime.pos.y && col.displacement.x !== 0) {
@@ -152,7 +154,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
     }
   });
 
-  // Turn around on obstacles
+  // Da la vuelta al chocar contra obstáculos sólidos laterales
   slime.onCollide("solid", (obj, col) => {
     if (obj.pos.y < slime.pos.y + 2) {
       if (!col || col.isLeft() || col.isRight() || Math.abs(col.normal?.x || 0) > 0.5) {
@@ -162,7 +164,7 @@ export function createBasicSlime(k, x, y, patrolRange = 50) {
     }
   });
 
-  // Sword melee hit
+  // Impacto de espada cuerpo a cuerpo del jugador
   slime.onCollide("sword_hitbox", () => {
     if (slime.isDead) return;
     slime.die();

@@ -5,20 +5,20 @@ import { createHUD } from "../entities/hud.js";
 import { gameState } from "../state.js";
 
 /**
- * Level 2: "Las Cavernas Oscuras y Minas Subterráneas" (Versión Expandida 120 Columnas)
- * 
- * Features & Mechanics (Req-2, Req-5, Req-8):
- * - Atmospheric Subterranean Cavern background (bg_level2)
- * - RottingPixels natural rock tileset (cave_top, cave_wall, wood_platform, cave_spikes)
- * - Mística Mecánica de Grimorios (Books):
- *     * Grimorio Carmesí (book_red): Abre el portal a la Cripta Carmesí (Dungeon Secreta de Fuego)
- *     * Grimorio Esmeralda (book_green): Abre el portal a la Garganta Esmeralda (Dungeon Secreta Tóxica)
- *     * Grimorio Celestial (book_blue): ¡EL ÚNICO LIBRO SAGRADO que abre el Nivel 3 (El Trono del Rey Demonio)!
+ * Nivel 2: "Las Cavernas Oscuras y Minas Subterráneas" (versión expandida de 120 columnas).
+ *
+ * Características y mecánicas:
+ * - Fondo atmosférico de caverna subterránea (`bg_level2`)
+ * - Tileset de roca natural RottingPixels (`cave_top`, `cave_wall`, `wood_platform`, `cave_spikes`)
+ * - Mecánica mística de grimorios (libros arcanos):
+ *   - Grimorio Carmesí (`book_red`): abre el portal a la Cripta Carmesí
+ *   - Grimorio Esmeralda (`book_green`): abre el portal a la Garganta Esmeralda
+ *   - Grimorio Celestial (`book_blue`): libro sagrado que abre el Nivel 3 (El Trono del Rey Demonio)
  * - Múltiples plataformas móviles (horizontales y ascensor vertical)
- * - Múltiples trampolines elásticos (géiseres)
- * - Escuadrón de Orcos Guerreros (3 HP, ataque de maza) y Slimes cavernícolas
- * 
- * @param {import("kaboom").KaboomCtx} k - Kaboom context
+ * - Trampolines elásticos (géiseres)
+ * - Escuadrón de Orcos Guerreros (3 PV, ataque con maza) y Slimes cavernícolas
+ *
+ * @param {import("kaboom").KaboomCtx} k - Contexto de Kaboom
  */
 export function initLevel2(k) {
   k.scene("level2", () => {
@@ -26,11 +26,11 @@ export function initLevel2(k) {
     gameState.hasKey = false;
     gameState.collectedBook = null;
 
-    // Reset camera and gravity
+    // Reinicia la cámara y la gravedad
     k.setGravity(980);
     k.camPos(k.width() / 2, k.height() / 2);
 
-    // --- Req-8: Atmospheric Cavern Background ---
+    // --- Fondo de caverna subterránea ---
     k.add([
       k.sprite("bg_level2"),
       k.pos(0, 0),
@@ -39,7 +39,7 @@ export function initLevel2(k) {
       k.z(-10)
     ]);
 
-    // Level objective hint under HUD banner
+    // Indicación del objetivo del nivel bajo el HUD
     k.add([
       k.rect(520, 20),
       k.pos(k.width() / 2, 48),
@@ -62,22 +62,22 @@ export function initLevel2(k) {
       k.z(81)
     ]);
 
-    // --- Level 2 Layout (ASCII Grid: 120 columns x 15 rows = 2880 x 360 px) ---
-    // Tile legend:
-    // '=' cave_top (ground)
-    // '#' cave_wall
-    // '-' wood_platform
-    // '^' cave_spikes (stalagmites)
-    // '$' coin
-    // 'G' gem
-    // 'T' spring trampoline
-    // '1' book_red (Grimorio Carmesi)
+    // --- Diseño del Nivel 2 (cuadrícula ASCII: 120 columnas x 15 filas = 2880 x 360 px) ---
+    // Leyenda de tiles:
+    // '=' cave_top (suelo)
+    // '#' cave_wall (muro de roca)
+    // '-' wood_platform (plataforma de madera)
+    // '^' cave_spikes (estalagmitas)
+    // '$' moneda
+    // 'G' gema
+    // 'T' trampolín / resorte
+    // '1' book_red (Grimorio Carmesí)
     // '2' book_green (Grimorio Esmeralda)
     // '3' book_blue (Grimorio Celestial - Verdadero)
-    // 'D' catacomb exit door
-    // '@' player spawn
+    // 'D' puerta de salida de las catacumbas
+    // '@' punto de aparición del jugador
     // 'S' slime
-    // 'O' orc warrior
+    // 'O' orco guerrero
     const mapLayout = [
       "                                                                                                                        ",
       "                                      $$$                                                       3                       ",
@@ -106,7 +106,13 @@ export function initLevel2(k) {
     const enemies = [];
     const movingPlatforms = [];
 
-    // Helper to spawn floating score/notification text
+    /**
+     * Muestra un texto flotante ascendente con puntos o avisos.
+     *
+     * @param {import("kaboom").Vec2} pos - Posición inicial del aviso
+     * @param {string} txt - Texto a mostrar
+     * @param {import("kaboom").Color} [col] - Color del texto
+     */
     function showPopup(pos, txt, col = k.rgb(255, 230, 80)) {
       const popup = k.add([
         k.text(txt, { font: "pressstart", size: 8 }),
@@ -121,13 +127,13 @@ export function initLevel2(k) {
       k.wait(0.6, () => popup.destroy());
     }
 
-    // Pre-calculate visual tiles grouped by column for zero-allocation horizontal frustum culling
+    // Precalcula los tiles visuales agrupados por columna para recorte horizontal sin asignaciones
     const visualCols = Array.from({ length: cols }, () => []);
     const groundSegments = [];
     const wallSegments = [];
     const platformSegments = [];
 
-    // Parse the map layout
+    // Analiza el diseño del mapa
     for (let row = 0; row < rows; row++) {
       const line = mapLayout[row];
       let col = 0;
@@ -164,7 +170,7 @@ export function initLevel2(k) {
         } else {
           switch (char) {
             case "$":
-              // Gold Coin (+100 points)
+              // Moneda de oro (+100 puntos)
               k.add([
                 k.sprite("coin"),
                 k.pos(x + 12, y + 12),
@@ -177,7 +183,7 @@ export function initLevel2(k) {
               break;
 
             case "G":
-              // Crystal Gem (+250 points)
+              // Gema de cristal (+250 puntos)
               k.add([
                 k.sprite("gem"),
                 k.pos(x + 12, y + 12),
@@ -190,7 +196,7 @@ export function initLevel2(k) {
               break;
 
             case "^":
-              // Mineral Stalagmites Hazard (precise player-favorable hazard hitbox)
+              // Estalagmitas minerales (hitbox ajustada a favor del jugador)
               k.add([
                 k.sprite("cave_spikes"),
                 k.pos(x, y),
@@ -203,7 +209,7 @@ export function initLevel2(k) {
               break;
 
             case "T":
-              // Geyser / Bouncy Spring Trampoline
+              // Géiser / trampolín elástico
               k.add([
                 k.sprite("spring"),
                 k.pos(x, y),
@@ -215,7 +221,7 @@ export function initLevel2(k) {
               break;
 
             case "1":
-              // 1: Grimorio Carmesí (Falso -> Cripta de Fuego)
+              // 1: Grimorio Carmesí (desvío -> Cripta Carmesí)
               k.add([
                 k.sprite("book_red"),
                 k.pos(x + 12, y + 12),
@@ -229,7 +235,7 @@ export function initLevel2(k) {
               break;
 
             case "2":
-              // 2: Grimorio Esmeralda (Falso -> Garganta Tóxica)
+              // 2: Grimorio Esmeralda (desvío -> Garganta Esmeralda)
               k.add([
                 k.sprite("book_green"),
                 k.pos(x + 12, y + 12),
@@ -243,7 +249,7 @@ export function initLevel2(k) {
               break;
 
             case "3":
-              // 3: Grimorio Celestial (Verdadero -> Trono del Rey Demonio)
+              // 3: Grimorio Celestial (verdadero -> Trono del Rey Demonio)
               k.add([
                 k.sprite("book_blue"),
                 k.pos(x + 12, y + 12),
@@ -257,7 +263,7 @@ export function initLevel2(k) {
               break;
 
             case "D":
-              // Locked Exit Door (16x32, 2 tiles tall)
+              // Puerta de salida sellada (16x32, 2 tiles de alto)
               k.add([
                 k.sprite("door_closed"),
                 k.pos(x, y),
@@ -276,9 +282,8 @@ export function initLevel2(k) {
       }
     }
 
-    // Dedicated frustum-culled tilemap renderer:
-    // Only draws columns visible within horizontal viewport (+48px padding)
-    // Zero WebGL draw calls for off-screen tiles!
+    // Renderizador de tilemap con recorte por frustum:
+    // Solo dibuja columnas visibles dentro del viewport horizontal (+48 px de margen)
     const tilemap = k.add([
       k.z(1)
     ]);
@@ -302,10 +307,10 @@ export function initLevel2(k) {
       }
     });
 
-    // Consolidated Static Physics Colliders:
-    // Replaces 188 individual tile bodies with 31 seamless bodies!
+    // Colisionadores físicos estáticos consolidados:
+    // Reemplaza cuerpos individuales por segmentos continuos sin costuras
 
-    // 1. Consolidated Ground Colliders (Continuous seamless rectangles for all '=' segments)
+    // 1. Colisionadores consolidados de suelo (segmentos '=')
     for (const seg of groundSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -318,7 +323,7 @@ export function initLevel2(k) {
       ]);
     }
 
-    // 2. Consolidated Wall Colliders (Continuous seamless rectangles for all '#' segments)
+    // 2. Colisionadores consolidados de muros (segmentos '#')
     for (const seg of wallSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -331,7 +336,7 @@ export function initLevel2(k) {
       ]);
     }
 
-    // 3. Consolidated Platform Colliders (Continuous seamless rectangles for all '-' segments)
+    // 3. Colisionadores consolidados de plataformas (segmentos '-')
     for (const seg of platformSegments) {
       k.add([
         k.rect(seg.len * tileSize, tileSize),
@@ -345,7 +350,7 @@ export function initLevel2(k) {
       ]);
     }
 
-    // Left solid boundary
+    // Límite sólido izquierdo
     k.add([
       k.rect(32, mapHeight + 600),
       k.pos(-32, -300),
@@ -356,7 +361,7 @@ export function initLevel2(k) {
       "boundary"
     ]);
 
-    // Right solid boundary
+    // Límite sólido derecho
     k.add([
       k.rect(32, mapHeight + 600),
       k.pos(mapWidth, -300),
@@ -367,9 +372,9 @@ export function initLevel2(k) {
       "boundary"
     ]);
 
-    // --- Multiple Moving Platforms (Req-5) ---
+    // --- Múltiples plataformas móviles ---
 
-    // Platform 1: Horizontal over first chasm (cols 17-20)
+    // Plataforma 1: horizontal sobre el primer abismo (cols 17-20)
     const plat1 = k.add([
       k.sprite("wood_platform"),
       k.pos(18 * 24, 11 * 24),
@@ -391,7 +396,7 @@ export function initLevel2(k) {
     });
     movingPlatforms.push(plat1);
 
-    // Platform 2: Vertical Elevator between lower tunnel and upper key chamber (cols 45-50)
+    // Plataforma 2: ascensor vertical entre el túnel inferior y la cámara superior (cols 45-50)
     const plat2 = k.add([
       k.sprite("wood_platform"),
       k.pos(45 * 24, 9 * 24),
@@ -413,7 +418,7 @@ export function initLevel2(k) {
     });
     movingPlatforms.push(plat2);
 
-    // Platform 3: Horizontal over third chasm (cols 72-76)
+    // Plataforma 3: horizontal sobre el tercer abismo (cols 72-76)
     const plat3 = k.add([
       k.sprite("wood_platform"),
       k.pos(73 * 24, 11 * 24),
@@ -435,7 +440,11 @@ export function initLevel2(k) {
     });
     movingPlatforms.push(plat3);
 
-    // Helper: Carries player when standing on moving platform (fast zero-allocation check)
+    /**
+     * Traslada horizontalmente al jugador cuando está apoyado sobre una plataforma móvil.
+     *
+     * @param {import("kaboom").GameObj} plat - Plataforma móvil con propiedad `deltaX`
+     */
     function carryPlayerHorizontal(plat) {
       if (!player || !player.isGrounded()) return;
       const isStanding =
@@ -448,6 +457,11 @@ export function initLevel2(k) {
       }
     }
 
+    /**
+     * Traslada verticalmente al jugador cuando está apoyado sobre un ascensor móvil.
+     *
+     * @param {import("kaboom").GameObj} plat - Plataforma móvil con propiedad `deltaY`
+     */
     function carryPlayerVertical(plat) {
       if (!player || !player.isGrounded()) return;
       const isStanding =
@@ -460,8 +474,8 @@ export function initLevel2(k) {
       }
     }
 
-    // --- Dynamic Portal Door Label ---
-    // Col 113, Row 2 -> Door rests on row 4 at y = 96
+    // --- Etiqueta dinámica de la puerta del portal ---
+    // Col 113, fila 2 -> la puerta descansa en la fila 4 (y = 96)
     const doorLabel = k.add([
       k.text("PUERTA SELLADA: BUSCA UN LIBRO", { font: "pressstart", size: 6.5 }),
       k.pos(113 * 24 + 12, 2 * 24 - 10),
@@ -482,7 +496,7 @@ export function initLevel2(k) {
       }
     });
 
-    // Solid foundation bedrock under ground tiles to prevent physics tunneling
+    // Base sólida bajo los tiles del suelo para evitar atravesar la física
     const bedrockSegments = [
       { x: 0, w: 408 },
       { x: 792, w: 312 },
@@ -501,27 +515,27 @@ export function initLevel2(k) {
       ]);
     });
 
-    // Spawn player at "@" position (flush on ground)
+    // Aparición del jugador en '@' (apoyado sobre el suelo)
     player = createPlayer(k, 48, 322, true);
 
-    // Spawn Slimes across the cavern (flush on platform/ground surfaces)
+    // Aparición de Slimes por las cavernas (apoyados sobre plataformas o suelo)
     enemies.push(createSlime(k, 9 * 24, 156, 24));
     enemies.push(createSlime(k, 38 * 24, 324, 48));
     enemies.push(createSlime(k, 73 * 24, 324, 40));
     enemies.push(createSlime(k, 110 * 24, 324, 45));
 
-    // Spawn Orc Warriors on solid platforms and camps (flush on surface, zero clipping)
+    // Aparición de Orcos Guerreros en plataformas sólidas y campamentos
     enemies.push(createOrc(k, 25 * 24, 157, 40));
     enemies.push(createOrc(k, 50 * 24, 157, 40));
     enemies.push(createOrc(k, 56 * 24, 277, 36));
     enemies.push(createOrc(k, 104 * 24, 325, 45));
 
-    // Initialize HUD (Req-3 & Req-4)
+    // Inicializa el HUD
     createHUD(k, "Nivel 2: Cavernas");
 
-    // --- Collisions & Interactions ---
+    // --- Colisiones e interacciones ---
 
-    // 1. Collect Coins (+100 points)
+    // 1. Recolección de monedas (+100 puntos)
     player.onCollide("coin", (coin) => {
       coin.destroy();
       k.play("coin");
@@ -529,7 +543,7 @@ export function initLevel2(k) {
       showPopup(coin.pos, "+100");
     });
 
-    // 2. Collect Gems (+250 points)
+    // 2. Recolección de gemas (+250 puntos)
     player.onCollide("gem", (gem) => {
       gem.destroy();
       k.play("coin");
@@ -537,9 +551,9 @@ export function initLevel2(k) {
       showPopup(gem.pos, "+250", k.rgb(120, 240, 255));
     });
 
-    // 3. Book Collection Mechanics (Misterio: Sin revelar cuál es el correcto)
+    // 3. Recolección de libros arcanos (misterio: sin revelar cuál es el correcto)
 
-    // Grimorio Carmesí (Red Book)
+    // Grimorio Carmesí (libro rojo)
     player.onCollide("book_red", (book) => {
       book.destroy();
       gameState.collectedBook = "red";
@@ -561,7 +575,7 @@ export function initLevel2(k) {
       k.wait(2.5, () => banner.destroy());
     });
 
-    // Grimorio Esmeralda (Green Book)
+    // Grimorio Esmeralda (libro verde)
     player.onCollide("book_green", (book) => {
       book.destroy();
       gameState.collectedBook = "green";
@@ -583,7 +597,7 @@ export function initLevel2(k) {
       k.wait(2.5, () => banner.destroy());
     });
 
-    // Grimorio Celestial (Blue Book)
+    // Grimorio Celestial (libro azul)
     player.onCollide("book_blue", (book) => {
       book.destroy();
       gameState.collectedBook = "blue";
@@ -605,23 +619,23 @@ export function initLevel2(k) {
       k.wait(2.5, () => banner.destroy());
     });
 
-    // 4. Stalagmites Hazard (Req-4)
+    // 4. Peligro de estalagmitas
     player.onCollide("spikes", () => {
       player.receiveDamage(0);
     });
 
-    // 5. Spring Trampolines (Req-5)
+    // 5. Trampolines de resorte
     player.onCollide("spring", () => {
       k.play("spring");
       player.jump(player.jumpForce * 1.55);
       player.hasDoubleJumped = false;
     });
 
-    // 6. Enemy Collision (Stomp vs Lateral Damage)
+    // 6. Colisión con enemigos (pisotón vs daño lateral)
     player.onCollide("enemy", (enemy) => {
       if (enemy.isDead || player.isHurt) return;
 
-      // Robust stomp check: Player is above enemy in the air or falling
+      // Comprobación de pisotón: el jugador está por encima del enemigo en el aire o cayendo
       const isStomping =
         (player.pos.y < enemy.pos.y - 2 && !player.isGrounded()) ||
         (player.vel && player.vel.y > 0 && player.pos.y < enemy.pos.y);
@@ -641,20 +655,20 @@ export function initLevel2(k) {
       }
     });
 
-    // 7. Orc Attack Hitbox
+    // 7. Hitbox del ataque de los Orcos
     player.onCollide("orc_attack", (hitbox) => {
       if (player.isHurt || player.isDead) return;
       const knockDir = player.pos.x < hitbox.pos.x ? -1 : 1;
       player.receiveDamage(knockDir);
     });
 
-    // 8. Exit Door Portal Reaction depending on the Book held!
+    // 8. Reacción del portal de salida según el libro equipado
     let reachedDoor = false;
     player.onCollide("exit_door", (door) => {
       if (reachedDoor) return;
 
       if (!gameState.hasKey || !gameState.collectedBook) {
-        // Locked without a book
+        // Puerta bloqueada sin un libro
         k.play("hit");
         showPopup(door.pos, "¡CERRADO! ENCUENTRA UN LIBRO", k.rgb(255, 100, 100));
         return;
@@ -667,7 +681,7 @@ export function initLevel2(k) {
       const book = gameState.collectedBook;
 
       if (book === "blue") {
-        // BOOK 1: Leads to Level 3 Final Boss!
+        // Libro azul: lleva al Nivel 3 (jefe final)
         k.add([
           k.rect(k.width(), 70),
           k.pos(0, k.height() / 2 - 35),
@@ -702,7 +716,7 @@ export function initLevel2(k) {
           k.go("level3");
         });
       } else if (book === "red") {
-        // BOOK 2: Leads to Crimson Crypt!
+        // Libro rojo: lleva a la Cripta Carmesí
         k.add([
           k.rect(k.width(), 70),
           k.pos(0, k.height() / 2 - 35),
@@ -734,7 +748,7 @@ export function initLevel2(k) {
           k.go("dungeon_red");
         });
       } else if (book === "green") {
-        // BOOK 3: Leads to Emerald Gorge!
+        // Libro verde: lleva a la Garganta Esmeralda
         k.add([
           k.rect(k.width(), 70),
           k.pos(0, k.height() / 2 - 35),
@@ -768,18 +782,18 @@ export function initLevel2(k) {
       }
     });
 
-    // Keep player strictly within map limits (120 cols = 2880 px) and smoothly follow with camera
+    // Mantiene al jugador dentro de los límites del mapa (120 cols = 2880 px) y ajusta la cámara
     k.onUpdate(() => {
       if (!player) return;
 
-      // Hard clamp within map boundaries
+      // Límite estricto dentro de los bordes del mapa
       if (player.pos.x < 10) {
         player.pos.x = 10;
       } else if (player.pos.x > mapWidth - 10) {
         player.pos.x = mapWidth - 10;
       }
 
-      // Camera smoothly follows player horizontally within world bounds
+      // La cámara sigue suavemente al jugador en horizontal dentro de los límites del mundo
       const targetCamX = Math.max(k.width() / 2, Math.min(player.pos.x, mapWidth - k.width() / 2));
       k.camPos(targetCamX, k.height() / 2);
     });
