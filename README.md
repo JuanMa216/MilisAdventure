@@ -32,8 +32,8 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
      - Ataque de tajo con espada y choque telúrico que genera temblor en pantalla.
      - **Fase 2 (Enrage Mode)** al llegar a 5 HP o menos (aura de fuego, velocidad y agresividad aumentadas).
 
-4. ** Easter Egg Secreto: El Origen de la Leyenda**
-   - Se desbloquea automáticamente si derrotas al Rey Demonio con **5.000 puntos o más**.
+4. **Easter Egg Secreto: El Origen de la Leyenda**
+   - Se desbloquea automáticamente si derrotas al Rey Demonio con **????? puntos o más**.
    - Escenario nostálgico con minijuego interactivo de **Baloncesto**:
      - Balón con física de rebote que puedes patear o golpear con la espada.
      - Anotación en el aro con anuncio de *¡CANASTA LEGENDARIA! (+500 pts)*.
