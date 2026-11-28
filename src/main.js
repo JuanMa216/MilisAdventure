@@ -11,6 +11,7 @@ import { initGameOver } from "./scenes/gameover.js";
 import { initSecret } from "./scenes/secret.js";
 import { initEasterEggCreep } from "./scenes/easteregg_creep.js";
 import { initSanctuary } from "./scenes/sanctuary.js";
+import { initCredits } from "./scenes/credits.js";
 
 // --- 1. Load Character Sprites ---
 k.loadSprite("player", "sprites/player/mili.png", {
@@ -204,6 +205,7 @@ initGameOver(k);
 initSecret(k);
 initEasterEggCreep(k);
 initSanctuary(k);
+initCredits(k);
 
 // Start at Level 1, or Level 2 / Level 3 / Throne / Secret via URL query param (?level=2, ?level=3, ?level=throne, ?level=secret)
 const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -222,6 +224,7 @@ else if (levelParam === "throne") initialScene = "throne";
 else if (levelParam === "red" || levelParam === "dungeon_red") initialScene = "dungeon_red";
 else if (levelParam === "green" || levelParam === "dungeon_green") initialScene = "dungeon_green";
 else if (levelParam === "victory") initialScene = "victory";
+else if (levelParam === "credits") initialScene = "credits";
 else if (levelParam === "secret" || levelParam === "easteregg") {
   gameState.score = 5500;
   initialScene = "secret";

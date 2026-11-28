@@ -123,15 +123,27 @@ export function initVictory(k) {
       ]);
     }
 
-    // Restart Prompt
+    // Restart & Credits Prompt
     const prompt = k.add([
-      k.text("Presiona ESPACIO o ENTER para volver a jugar", {
+      k.text("Presiona ESPACIO o ENTER para ver los Créditos", {
         font: "pressstart",
         size: 8
       }),
-      k.pos(k.width() / 2, 295),
+      k.pos(k.width() / 2, 292),
       k.anchor("center"),
-      k.color(220, 220, 220),
+      k.color(220, 235, 255),
+      k.fixed(),
+      k.z(10)
+    ]);
+
+    k.add([
+      k.text("(Presiona R para volver a jugar directamente)", {
+        font: "pressstart",
+        size: 6.5
+      }),
+      k.pos(k.width() / 2, 314),
+      k.anchor("center"),
+      k.color(165, 175, 195),
       k.fixed(),
       k.z(10)
     ]);
@@ -141,12 +153,16 @@ export function initVictory(k) {
       prompt.opacity = prompt.opacity === 1 ? 0.3 : 1;
     });
 
-    // Key handlers to restart game from Level 1
-    for (const key of ["space", "enter", "r"]) {
+    // Key handlers to open credits or restart game from Level 1
+    for (const key of ["space", "enter", "c"]) {
       k.onKeyPress(key, () => {
-        gameState.reset();
-        k.go("level1");
+        k.go("credits");
       });
     }
+
+    k.onKeyPress("r", () => {
+      gameState.reset();
+      k.go("level1");
+    });
   });
 }
