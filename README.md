@@ -4,7 +4,7 @@ Videojuego 2D de plataformas y acción estilo *pixel art* desarrollado con **Kab
 
 ---
 
-## 🎮 Sinopsis y Jugabilidad
+##  Sinopsis y Jugabilidad
 
 Acompaña a **Mili**, una valiente caballera, en una épica travesía a través de mazmorras, cavernas subterráneas y una imponente torreela para purificar las tierras y derrotar al temible **Rey Demonio**.
 
