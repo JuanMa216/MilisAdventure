@@ -1,4 +1,4 @@
-# ⚔️ Mili's Adventure
+#  Mili's Adventure
 
 Videojuego 2D de plataformas y acción estilo *pixel art* desarrollado con **KaboomJS** y **Vite** para la asignatura de **Computación Gráfica**.
 
@@ -8,7 +8,7 @@ Videojuego 2D de plataformas y acción estilo *pixel art* desarrollado con **Kab
 
 Acompaña a **Mili**, una valiente caballera, en una épica travesía a través de mazmorras, cavernas subterráneas y una imponente torreela para purificar las tierras y derrotar al temible **Rey Demonio**.
 
-### 🌟 Niveles y Mecánicas
+###  Niveles y Mecánicas
 
 1. **Nivel 1: El Castillo Abandonado**
    - Introducción al movimiento, salto y combate con espada.
@@ -32,7 +32,7 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
      - Ataque de tajo con espada y choque telúrico que genera temblor en pantalla.
      - **Fase 2 (Enrage Mode)** al llegar a 5 HP o menos (aura de fuego, velocidad y agresividad aumentadas).
 
-4. **🥚 Easter Egg Secreto: El Origen de la Leyenda**
+4. ** Easter Egg Secreto: El Origen de la Leyenda**
    - Se desbloquea automáticamente si derrotas al Rey Demonio con **5.000 puntos o más**.
    - Escenario nostálgico con minijuego interactivo de **Baloncesto**:
      - Balón con física de rebote que puedes patear o golpear con la espada.
@@ -41,7 +41,7 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
 
 ---
 
-## 🕹️ Controles
+##  Controles
 
 | Acción | Teclas |
 | :--- | :--- |
@@ -54,7 +54,7 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
 
 ---
 
-## 🚀 Instalación y Ejecución Local
+##  Instalación y Ejecución Local
 
 ### Prerrequisitos
 - [Node.js](https://nodejs.org/) (versión 18 o superior recomendada)
@@ -86,7 +86,7 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+##  Tecnologías Utilizadas
 
 - **Motor de Juegos**: [KaboomJS](https://kaboomjs.com/) (v3000.1.17)
 - **Empaquetador y Dev Server**: [Vite](https://vitejs.dev/) (v6.4.6)
@@ -95,7 +95,7 @@ Acompaña a **Mili**, una valiente caballera, en una épica travesía a través 
 
 ---
 
-## 👥 Autores
+##  Autores
 
 - **Juan Manuel Rojas** ([@JuanMa216](https://github.com/JuanMa216))
 - **Nohora Camila Cardozo** ([@notnohora](https://github.com/notnohora))
